@@ -7,15 +7,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "apps/truth-api"))
 
-from app.db import connect_db, get_db_path
+from app.db import connect_db, ensure_migrations, get_db_path
 from app.seed_loader import load_seed_files
 
 
 def run_migration() -> None:
-    migration_sql = (ROOT / "migrations/sql/001_init.sql").read_text()
     with connect_db() as connection:
-        connection.executescript(migration_sql)
-        connection.commit()
+        ensure_migrations(connection, get_db_path())
 
 
 def main() -> int:

@@ -36,3 +36,12 @@ def get_lancedb_path() -> Path:
 
 def get_embedding_model() -> str:
     return get_env("EMBEDDING_MODEL", "text-embedding-3-small") or "text-embedding-3-small"
+
+
+def get_chat_model() -> str:
+    return get_env("CHAT_MODEL", "gpt-4o-mini") or "gpt-4o-mini"
+
+
+def get_dimension_classifier_llm_fallback() -> bool:
+    raw = (get_env("DIMENSION_CLASSIFIER_LLM_FALLBACK", "true") or "true").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
