@@ -8,8 +8,18 @@ import lancedb
 import numpy as np
 from openai import APIConnectionError, APIStatusError, OpenAI
 
-from app.config import get_embedding_model, get_lancedb_path
-from app.gateway_check import OPENAI_FALLBACK_PROVIDER, OPENCLAW_PROVIDER, check_embedding_gateway
+from app.config import (
+    get_embedding_model,
+    get_lancedb_path,
+    get_openai_fallback_api_key,
+    get_openai_fallback_base_url,
+)
+from app.gateway_check import (
+    OLLAMA_LOCAL_PROVIDER,
+    OPENAI_FALLBACK_PROVIDER,
+    OPENCLAW_PROVIDER,
+    detect_embedding_provider,
+)
 
 VECTOR_TABLE_NAME = "truth_puzzles"
 OFFICIAL_OPENAI_BASE_URL = "https://api.openai.com/v1"
@@ -18,10 +28,11 @@ OFFICIAL_OPENAI_MODEL = "text-embedding-3-small"
 
 @lru_cache(maxsize=2)
 def get_embedding_client(primary: bool = True) -> OpenAI:
-    base_url = os.getenv("OPENAI_BASE_URL") if primary else OFFICIAL_OPENAI_BASE_URL
+    base_url = os.getenv("OPENAI_BASE_URL") if primary else get_openai_fallback_base_url()
+    api_key = os.getenv("OPENAI_API_KEY") if primary else get_openai_fallback_api_key()
     return OpenAI(
         base_url=base_url,
-        api_key=os.getenv("OPENAI_API_KEY"),
+        api_key=api_key,
     )
 
 
@@ -33,16 +44,22 @@ def get_lancedb():
 
 
 def fallback_openai_available() -> bool:
-    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    api_key = get_openai_fallback_api_key().strip()
     return bool(api_key and api_key.lower() != "dummy")
 
 
 def get_embedding_mode() -> str:
-    gateway = check_embedding_gateway()
-    if gateway["gateway"]:
-        return "gateway"
+    detection = detect_embedding_provider()
+    if detection["available"]:
+        provider = str(detection["provider"])
+        if provider == OPENCLAW_PROVIDER:
+            return "gateway"
+        if provider == OLLAMA_LOCAL_PROVIDER:
+            return OLLAMA_LOCAL_PROVIDER
+        if provider == OPENAI_FALLBACK_PROVIDER:
+            return OPENAI_FALLBACK_PROVIDER
     if fallback_openai_available():
-        return "openai"
+        return OPENAI_FALLBACK_PROVIDER
     return "sqlite"
 
 
@@ -55,12 +72,15 @@ def _provider_label(primary: bool) -> str:
 
 
 def _provider_name(primary: bool) -> str:
-    return OPENCLAW_PROVIDER if primary else OPENAI_FALLBACK_PROVIDER
+    if primary:
+        detection = detect_embedding_provider()
+        return str(detection["provider"])
+    return OPENAI_FALLBACK_PROVIDER
 
 
 def _embed_with_client(text_or_texts: str | list[str], *, primary: bool) -> dict[str, list[list[float]] | str]:
     model = get_embedding_model() if primary else OFFICIAL_OPENAI_MODEL
-    endpoint = os.getenv("OPENAI_BASE_URL") if primary else OFFICIAL_OPENAI_BASE_URL
+    endpoint = os.getenv("OPENAI_BASE_URL") if primary else get_openai_fallback_base_url()
     try:
         response = get_embedding_client(primary=primary).embeddings.create(
             model=model,
@@ -80,8 +100,8 @@ def _embed_with_client(text_or_texts: str | list[str], *, primary: bool) -> dict
 
 
 def _embed_with_fallback(text_or_texts: str | list[str]) -> dict[str, list[list[float]] | str]:
-    gateway = check_embedding_gateway()
-    if gateway["gateway"]:
+    detection = detect_embedding_provider()
+    if detection["available"]:
         try:
             return _embed_with_client(text_or_texts, primary=True)
         except RuntimeError:
@@ -90,7 +110,7 @@ def _embed_with_fallback(text_or_texts: str | list[str]) -> dict[str, list[list[
     if fallback_openai_available():
         return _embed_with_client(text_or_texts, primary=False)
 
-    raise RuntimeError("No embedding provider is available. Gateway is down and OpenAI fallback is not configured.")
+    raise RuntimeError("No embedding provider is available. Primary endpoint is down and OpenAI fallback is not configured.")
 
 
 def embed(text: str) -> dict[str, list[float] | str]:

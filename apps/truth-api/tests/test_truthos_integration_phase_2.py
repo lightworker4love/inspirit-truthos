@@ -139,7 +139,7 @@ def test_truth_query_returns_extended_fields_and_session_memory(monkeypatch, tmp
     assert payload["session_id"] == "sess-200"
     assert payload["dimensions_triggered"] == ["relationship", "emotion", "belief"]
     assert payload["matched_puzzles_count"] == 1
-    assert payload["embedding_mode"] in {"gateway", "openai", "sqlite"}
+    assert payload["embedding_mode"] in {"gateway", "openai", "ollama-local", "sqlite"}
     assert payload["mirror"].startswith("你，")
 
     history_response = client.get("/api/truth/session/anonymous")
@@ -149,3 +149,67 @@ def test_truth_query_returns_extended_fields_and_session_memory(monkeypatch, tmp
     assert history_payload["history"][0]["dimension"] == "relationship"
     assert history_payload["history"][0]["principle"] == "P-REL-01"
     assert "過度解釋" in history_payload["history"][0]["snippet"]
+
+
+def test_detect_embedding_provider_ollama_local(monkeypatch):
+    import app.gateway_check as gateway_module
+
+    class DummyResponse:
+        def __init__(self, status_code: int, payload: dict[str, object]):
+            self.status_code = status_code
+            self._payload = payload
+
+        def json(self) -> dict[str, object]:
+            return self._payload
+
+    monkeypatch.setenv("OPENAI_BASE_URL", "http://host.docker.internal:11434/v1")
+    monkeypatch.setenv("OPENAI_API_KEY", "ollama-local")
+    monkeypatch.setenv("EMBEDDING_MODEL", "nomic-embed-text:latest")
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "ollama-local")
+
+    monkeypatch.setattr(
+        gateway_module.httpx,
+        "get",
+        lambda *_args, **_kwargs: DummyResponse(
+            200,
+            {"data": [{"id": "nomic-embed-text:latest"}]},
+        ),
+    )
+    monkeypatch.setattr(
+        gateway_module.httpx,
+        "post",
+        lambda *_args, **_kwargs: DummyResponse(200, {"data": []}),
+    )
+
+    detection = gateway_module.detect_embedding_provider()
+
+    assert detection == {
+        "available": True,
+        "gateway": False,
+        "provider": "ollama-local",
+    }
+
+
+def test_healthz_reports_ollama_local_without_gateway(monkeypatch):
+    import app.main as main_module
+
+    client = TestClient(app)
+    monkeypatch.setattr(
+        main_module,
+        "check_embedding_gateway",
+        lambda: {"gateway": False, "provider": "ollama-local"},
+    )
+    monkeypatch.setattr(main_module, "get_embedding_mode", lambda: "ollama-local")
+    monkeypatch.setattr(main_module, "vector_index_exists", lambda: True)
+    monkeypatch.setattr(main_module, "get_retrieval_mode", lambda: "vector")
+
+    response = client.get("/healthz")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "ok",
+        "embedding_gateway": False,
+        "vector_index": True,
+        "embedding_mode": "ollama-local",
+        "retrieval_mode": "vector",
+    }

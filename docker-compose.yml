@@ -16,5 +16,7 @@ services:
       && uvicorn app.main:app --host ${TRUTHOS_API_HOST:-0.0.0.0} --port ${TRUTHOS_API_PORT:-8000}"
     volumes:
       - ./:/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "18000:${TRUTHOS_API_PORT:-8000}"

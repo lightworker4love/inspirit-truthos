@@ -38,6 +38,27 @@ def get_embedding_model() -> str:
     return get_env("EMBEDDING_MODEL", "text-embedding-3-small") or "text-embedding-3-small"
 
 
+def get_embedding_provider() -> str:
+    raw = (get_env("EMBEDDING_PROVIDER", "auto") or "auto").strip().lower()
+    aliases = {
+        "auto": "auto",
+        "gateway": "gateway",
+        "openclaw": "gateway",
+        "openai": "openai",
+        "ollama": "ollama-local",
+        "ollama-local": "ollama-local",
+    }
+    return aliases.get(raw, "auto")
+
+
+def get_openai_fallback_base_url() -> str:
+    return get_env("OPENAI_FALLBACK_BASE_URL", "https://api.openai.com/v1") or "https://api.openai.com/v1"
+
+
+def get_openai_fallback_api_key() -> str:
+    return (get_env("OPENAI_FALLBACK_API_KEY", "") or "").strip()
+
+
 def get_chat_model() -> str:
     return get_env("CHAT_MODEL", "gpt-4o-mini") or "gpt-4o-mini"
 

@@ -156,9 +156,10 @@ python -m compileall apps/truth-api/app scripts/build_vector_index.py
 
 ## Runtime Expectations
 
-TruthOS should support three runtime modes:
+TruthOS should support four runtime modes:
 
-- Full semantic mode: gateway + LanceDB
+- Full semantic mode: OpenClaw gateway + LanceDB
+- Local semantic mode: Ollama local embeddings + LanceDB
 - Fallback semantic mode: OpenAI fallback + LanceDB
 - Degraded reasoning mode: SQLite fallback
 
@@ -201,9 +202,11 @@ TruthOS can be mounted behind OpenClaw as a structured reasoning layer. OpenClaw
 
 #### Environment variables
 
-- `OPENAI_BASE_URL`: OpenClaw-compatible embedding/chat gateway URL
-- `OPENAI_API_KEY`: API key for gateway or fallback OpenAI
+- `OPENAI_BASE_URL`: primary OpenAI-compatible embeddings endpoint
+- `OPENAI_API_KEY`: API key for the primary embeddings endpoint
+- `EMBEDDING_PROVIDER`: explicit embedding mode hint (`gateway`, `ollama-local`, `openai`, `auto`)
 - `EMBEDDING_MODEL`: embedding model for LanceDB indexing and retrieval
+- `OPENAI_FALLBACK_API_KEY`: optional official OpenAI fallback key when the primary endpoint is local
 - `CHAT_MODEL`: model used by dimension-classifier LLM fallback
 - `DIMENSION_CLASSIFIER_LLM_FALLBACK`: enable/disable classifier LLM fallback
 - `TRUTHOS_INTERNAL_URL`: internal URL used by `scripts/openclaw_bridge.py`
@@ -273,9 +276,11 @@ TruthOS 可以作為 OpenClaw 後方的結構化推理層。OpenClaw 負責主�
 
 #### 環境變數說明
 
-- `OPENAI_BASE_URL`：OpenClaw 相容的 embedding / chat gateway URL
-- `OPENAI_API_KEY`：gateway 或 OpenAI fallback 使用的 API key
+- `OPENAI_BASE_URL`：主要的 OpenAI-compatible embeddings endpoint
+- `OPENAI_API_KEY`：主要 embeddings endpoint 使用的 API key
+- `EMBEDDING_PROVIDER`：明確指定 embedding 模式（`gateway`、`ollama-local`、`openai`、`auto`）
 - `EMBEDDING_MODEL`：LanceDB 建索引與檢索使用的 embedding model
+- `OPENAI_FALLBACK_API_KEY`：當主要 endpoint 是本地端時，可選擇額外保留官方 OpenAI fallback key
 - `CHAT_MODEL`：dimension classifier 啟用 LLM fallback 時使用的 chat model
 - `DIMENSION_CLASSIFIER_LLM_FALLBACK`：是否啟用 classifier 的 LLM fallback
 - `TRUTHOS_INTERNAL_URL`：`scripts/openclaw_bridge.py` 轉發 TruthOS 時使用的內部 URL
@@ -316,3 +321,109 @@ curl http://localhost:18000/api/truth/session/user-123
 #### Session 記憶 API
 
 `GET /api/truth/session/{user_id}` 會回傳該用戶最近 20 筆維度記憶，用於追蹤演進脈絡，而不是保存完整對話逐字稿。
+
+## Embedding Modes
+
+TruthOS 目前會誠實區分四種 embedding mode：
+
+- `gateway`: 真正的 OpenClaw gateway mode
+- `ollama-local`: 暫時的本地 Ollama embeddings mode
+- `openai`: 官方 OpenAI fallback mode
+- `sqlite`: 無可用 embeddings provider 時的降級模式
+
+### Real OpenClaw gateway mode
+
+只有在下列條件都成立時，TruthOS 才會回報 `embedding_mode: "gateway"`：
+
+- `EMBEDDING_PROVIDER=gateway` 或 `openclaw`
+- `OPENAI_BASE_URL` 指向可用的 OpenAI-compatible endpoint
+- `GET /v1/models` 可用
+- `POST /v1/embeddings` 可用
+
+目前這台本機上的 OpenClaw 還沒有對外暴露 `/v1/embeddings`，所以尚未達成 real gateway mode。
+
+### Temporary local Ollama embeddings mode
+
+這是目前建議的本機模式，用於：
+
+- 提升本機 retrieval 品質
+- 降低開發期成本
+- 避免直接走官方 OpenAI embeddings
+
+這個模式不是 real OpenClaw gateway mode。它只是暫時的本地加速路徑。
+
+建議設定：
+
+```bash
+OPENAI_BASE_URL=http://host.docker.internal:11434/v1
+OPENAI_API_KEY=ollama-local
+EMBEDDING_PROVIDER=ollama-local
+EMBEDDING_MODEL=nomic-embed-text:latest
+OPENAI_FALLBACK_BASE_URL=https://api.openai.com/v1
+OPENAI_FALLBACK_API_KEY=
+```
+
+如果 TruthOS 跑在 Docker container 中，而 Ollama 跑在 host 上，請使用 `host.docker.internal`，不要用 `localhost`。
+
+若你是從其他 embedding model 切換到 Ollama，本地現有的 LanceDB index 也要一起重建，否則舊向量維度可能讓查詢路徑退回 sqlite fallback。
+
+### OpenAI fallback mode
+
+當本地 endpoint 不可用，但 `OPENAI_FALLBACK_API_KEY` 有設定時，TruthOS 會回報 `embedding_mode: "openai"`，並退回官方 OpenAI embeddings。
+
+### SQLite fallback mode
+
+當沒有任何可用 embeddings provider 時，TruthOS 會回報 `embedding_mode: "sqlite"`，並退回 keyword-based retrieval。
+
+### Manual verification
+
+驗證 models endpoint：
+
+```bash
+curl -s "${OPENAI_BASE_URL%/}/models"
+```
+
+如果 `OPENAI_BASE_URL` 不是以 `/v1` 結尾，則改為：
+
+```bash
+curl -s "${OPENAI_BASE_URL%/}/v1/models"
+```
+
+驗證 embeddings endpoint：
+
+```bash
+curl -s -X POST "${OPENAI_BASE_URL%/}/embeddings" \
+  -H "Authorization: Bearer ${OPENAI_API_KEY}" \
+  -H "Content-Type: application/json" \
+  -d "{\"model\":\"${EMBEDDING_MODEL}\",\"input\":\"gateway health probe\"}"
+```
+
+如果 `OPENAI_BASE_URL` 沒有 `/v1`，則對應改成 `.../v1/embeddings`。
+
+### Verification scripts
+
+API 功能煙霧測試：
+
+```bash
+./scripts/smoke_test.sh
+```
+
+一般 embedding mode 驗證：
+
+```bash
+./scripts/check_embedding_mode.sh
+```
+
+嚴格 gateway 驗證：
+
+```bash
+./scripts/check_gateway_mode.sh
+```
+
+三者用途不同：
+
+- `smoke_test.sh` 驗證 TruthOS API 是否可用
+- `check_embedding_mode.sh` 驗證目前 TruthOS 正在使用哪一種 embeddings mode
+- `check_gateway_mode.sh` 只驗證 real OpenClaw gateway mode，若目前是 `ollama-local` 會故意失敗
+
+如果需要 real OpenClaw gateway mode，OpenClaw 本身必須對外提供 `/v1/embeddings`。
