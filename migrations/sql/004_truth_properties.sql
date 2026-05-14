@@ -10,3 +10,15 @@ CREATE TABLE IF NOT EXISTS truth_evals (
   discovery_triggered INTEGER DEFAULT 0,
   created_at TEXT NOT NULL
 );
+
+CREATE VIEW IF NOT EXISTS truthevals AS
+SELECT
+  id,
+  user_id AS userid,
+  session_id AS sessionid,
+  question,
+  verification_track,
+  life_evidence_confirmed,
+  discovery_triggered,
+  created_at AS createdat
+FROM truth_evals;
