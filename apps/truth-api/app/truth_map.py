@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 
+DEFAULT_AXIOM = "Truth exists before interpretation and can be discovered through lived experience."
 DEFAULT_OBJECTIVITY_STATEMENT = (
     "This principle operates regardless of whether the person knows, "
     "believes, or imagines it."
@@ -26,7 +27,7 @@ def build_truth_map(
             or "Soul Map not yet built for this user"
         ),
         "truth_claim": {
-            "axiom": principle.get("axiom") or puzzle.get("truth_reframe") or "",
+            "axiom": principle.get("axiom") or puzzle.get("truth_reframe") or DEFAULT_AXIOM,
             "objectivity_statement": principle.get("objectivity_statement")
             or DEFAULT_OBJECTIVITY_STATEMENT,
             "worldly_example": principle.get("worldly_example"),
