@@ -36,5 +36,10 @@ def test_truth_eval_writeback_records_verification_fields(tmp_path, monkeypatch)
             "SELECT verification_track, life_evidence_confirmed, discovery_triggered FROM truth_evals WHERE id = ?",
             (eval_id,),
         ).fetchone()
+        legacy_row = connection.execute(
+            "SELECT verification_track, life_evidence_confirmed, discovery_triggered FROM truthevals WHERE id = ?",
+            (eval_id,),
+        ).fetchone()
 
     assert row == ("dialogue", 0, 1)
+    assert legacy_row == ("dialogue", 0, 1)
