@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sqlite3
 import sys
 from pathlib import Path
 
@@ -9,6 +8,7 @@ sys.path.insert(0, str(ROOT / "apps/truth-api"))
 
 from app.db import connect_db, get_db_path
 from app.seed_loader import load_seed_files
+from scripts.run_migration_004 import run_migration as run_migration_004
 
 
 def run_migration() -> None:
@@ -16,6 +16,7 @@ def run_migration() -> None:
     with connect_db() as connection:
         connection.executescript(migration_sql)
         connection.commit()
+    run_migration_004()
 
 
 def main() -> int:
