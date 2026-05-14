@@ -84,9 +84,9 @@ jobs:
               "language": "zh-TW"
             }')
           echo "$RESPONSE" | python3 -m json.tool
-          echo "$RESPONSE" | python3 - <<'PY'
-          import json, sys
-          r = json.load(sys.stdin)
+          RESPONSE="$RESPONSE" python3 - <<'PY'
+          import json, os, sys
+          r = json.loads(os.environ["RESPONSE"])
           tm = r.get("truth_map", {})
           checks = {
               "truth_map present": bool(tm),
