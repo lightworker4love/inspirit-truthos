@@ -9,6 +9,52 @@ from app.embedding_pipeline import VECTOR_TABLE_NAME, embed, embedding_available
 from app.vector_index import ensure_vector_index, vector_index_exists
 
 
+PUZZLE_COLUMNS = """
+    id, dimension_code, principle_code, title, statement, misbelief,
+    truth_reframe, coach_prompt, tags, use_cases, source_doc, embedding_text,
+    truth_property_tags, verification_mode, fact_layer, reality_layer
+"""
+
+
+def _row_to_puzzle(row) -> dict:
+    return {
+        "id": row["id"],
+        "dimension_code": row["dimension_code"],
+        "principle_code": row["principle_code"],
+        "title": row["title"],
+        "statement": row["statement"],
+        "misbelief": row["misbelief"],
+        "truth_reframe": row["truth_reframe"],
+        "coach_prompt": row["coach_prompt"],
+        "tags": json.loads(row["tags"] or "[]"),
+        "use_cases": json.loads(row["use_cases"] or "[]"),
+        "source_doc": row["source_doc"],
+        "embedding_text": row["embedding_text"],
+        "truth_property_tags": json.loads(row["truth_property_tags"] or "[]"),
+        "verification_mode": row["verification_mode"] or "dialogue",
+        "fact_layer": row["fact_layer"],
+        "reality_layer": row["reality_layer"],
+    }
+
+
+def get_core_principle(principle_code: str | None) -> dict | None:
+    if not principle_code:
+        return None
+    with connect_db() as connection:
+        rows = connection.execute(
+            """
+            SELECT id, dimension_code, code, title, axiom, explanation,
+                   worldly_example, spiritual_example, objectivity_statement,
+                   truth_property_primary
+              FROM core_principles
+             WHERE code = ?
+             LIMIT 1
+            """,
+            (principle_code,),
+        ).fetchall()
+    return dict(rows[0]) if rows else None
+
+
 def _get_full_puzzles(puzzle_ids: Sequence[str]) -> dict[str, dict]:
     if not puzzle_ids:
         return {}
@@ -17,8 +63,7 @@ def _get_full_puzzles(puzzle_ids: Sequence[str]) -> dict[str, dict]:
     with connect_db() as connection:
         rows = connection.execute(
             f"""
-            SELECT id, dimension_code, principle_code, title, statement, misbelief,
-                   truth_reframe, coach_prompt, tags, use_cases, source_doc, embedding_text
+            SELECT {PUZZLE_COLUMNS}
             FROM truth_puzzles
             WHERE id IN ({placeholders})
             """,
@@ -27,27 +72,13 @@ def _get_full_puzzles(puzzle_ids: Sequence[str]) -> dict[str, dict]:
 
     result: dict[str, dict] = {}
     for row in rows:
-        result[row["id"]] = {
-            "id": row["id"],
-            "dimension_code": row["dimension_code"],
-            "principle_code": row["principle_code"],
-            "title": row["title"],
-            "statement": row["statement"],
-            "misbelief": row["misbelief"],
-            "truth_reframe": row["truth_reframe"],
-            "coach_prompt": row["coach_prompt"],
-            "tags": json.loads(row["tags"] or "[]"),
-            "use_cases": json.loads(row["use_cases"] or "[]"),
-            "source_doc": row["source_doc"],
-            "embedding_text": row["embedding_text"],
-        }
+        result[row["id"]] = _row_to_puzzle(row)
     return result
 
 
 def _fetch_sqlite_candidates(dimensions: Sequence[str] | None = None) -> list[dict]:
-    sql = """
-        SELECT id, dimension_code, principle_code, title, statement, misbelief,
-               truth_reframe, coach_prompt, tags, use_cases, source_doc, embedding_text
+    sql = f"""
+        SELECT {PUZZLE_COLUMNS}
         FROM truth_puzzles
     """
     params: list[str] = []
@@ -60,23 +91,7 @@ def _fetch_sqlite_candidates(dimensions: Sequence[str] | None = None) -> list[di
     with connect_db() as connection:
         rows = connection.execute(sql, tuple(params)).fetchall()
 
-    return [
-        {
-            "id": row["id"],
-            "dimension_code": row["dimension_code"],
-            "principle_code": row["principle_code"],
-            "title": row["title"],
-            "statement": row["statement"],
-            "misbelief": row["misbelief"],
-            "truth_reframe": row["truth_reframe"],
-            "coach_prompt": row["coach_prompt"],
-            "tags": json.loads(row["tags"] or "[]"),
-            "use_cases": json.loads(row["use_cases"] or "[]"),
-            "source_doc": row["source_doc"],
-            "embedding_text": row["embedding_text"],
-        }
-        for row in rows
-    ]
+    return [_row_to_puzzle(row) for row in rows]
 
 
 def _tokenize(text: str) -> list[str]:
@@ -108,6 +123,8 @@ def _sqlite_keyword_search(query: str, dimensions: Sequence[str] | None = None, 
                 candidate["truth_reframe"] or "",
                 candidate["coach_prompt"] or "",
                 candidate["embedding_text"],
+                candidate["fact_layer"] or "",
+                candidate["reality_layer"] or "",
             ]
         ).lower()
         score = float(dimension_rank.get(candidate["dimension_code"], 0)) * 6.0
