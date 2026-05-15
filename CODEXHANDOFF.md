@@ -1,49 +1,57 @@
-# Sprint 005 - Full-Stack Validation - PARTIAL COMPLETE
+# Sprint 006 - Soul Map Engine - COMPLETE
+
+Date: 2026-05-15
+
+## Summary
+
+Sprint 006 brings the Soul Map tables to life:
+
+- Added migration 005 for Soul Map depth fields, blind-spot depth fields, and `hardcasebuffer`.
+- Added `SoulMapEngine` for pattern accumulation, decay-weighted significance, active lessons, stage transitions, blind-spot upsert, and hard-case detection.
+- Wired `/api/truth/query` to update Soul Map state after truth-eval writeback.
+- Injected Soul Map summary, primary recurring pattern, and evolution stage into the query writeback context.
+- Added `GET /api/soul-map/{user_id}` and `GET /api/soul-map/{user_id}/blind-spots`.
+- Added unit coverage for Soul Map weighting, evolution stages, blind-spot severity, hard-case detection, primary pattern selection, and migration 005 idempotency.
+
+## Validation
+
+- `.venv/bin/python -m pytest tests/test_soul_map_engine.py tests/test_migration_005.py -q` passed: 9 tests.
+- `.venv/bin/python -m py_compile` passed for changed Python files.
+- Full `pytest tests/` in this local scaffold is blocked because this folder is not a full repo checkout and is missing app modules that exist on `master`; GitHub Actions remains the source of truth for full-stack validation.
+
+## Operational Notes
+
+- Local `git clone` and `git push` remain blocked by missing GitHub credentials.
+- Remote publishing is done with the GitHub app connector.
+- CI runs migration 004 and migration 005 on the test DB before pytest.
+
+---
+
+# Sprint 005 - Full-Stack Validation - COMPLETE
 
 Date: 2026-05-14
 
-## Completed
+## Sprint 005 Status
 
-- Added GitHub Actions CI at `.github/workflows/ci.yml`.
-- Added a GitHub-hosted `full-stack` job that:
-  - builds and starts `docker compose`,
-  - waits for `http://localhost:18000/healthz`,
-  - sends a live `/api/truth/query` request,
-  - validates all four `truth_map` layers,
-  - validates `verification_track`,
-  - validates legacy additive fields `dimensions`, `principles`, `puzzles`, `response`,
-  - checks `truthevals` writeback from inside the running `truth-api` container.
-- Preserved legacy query response fields in `apps/truth-api/app/main.py`.
-- Added `truthevals` compatibility view over `truth_evals` for Sprint005 validation queries.
-- Added `tests/test_api_backward_compatibility.py`.
-- Added fallback `truth_map.truth_claim.axiom` for fresh databases with no puzzle rows.
+Completed remotely:
 
-## Local Validation
+- Added `.github/workflows/ci.yml` on `master`.
+- Preserved legacy query response fields: `dimensions`, `puzzles`, and `response`.
+- Added `truthevals` compatibility view over `truth_evals`.
+- Added API backward-compatibility test coverage.
+- Added fallback `truth_map.truth_claim.axiom` so fresh databases with no puzzle rows still return a complete four-layer truth map.
+- GitHub Actions `TruthOS CI #6` passed on `master`:
+  - `test`: success
+  - `full-stack`: success
+  - `py-compile`: success
 
-Completed in the Codex workspace:
+Local constraints remain:
 
-- `python3 -m py_compile` passed for changed Python files.
-- `.venv/bin/python -m pytest tests/test_migration_004.py tests/test_seed_validator.py tests/test_truth_map_response.py tests/test_truth_verification.py tests/test_verification_writeback.py -q` passed: 15 tests.
-
-The local workspace is still a scaffold, not a full real checkout, so the API import test that requires the full repo dependency set is intended to run in GitHub Actions.
-
-## Remaining Blockers
-
-- Local Docker validation is blocked because this shell has no `docker` command.
-- Local Git clone/push is still blocked:
+- `docker compose up -d --build` cannot run here because Docker is not installed in this shell.
+- Real local `git clone` / `git push origin master` is still blocked:
   - HTTPS: no non-interactive username/token.
   - SSH: `Permission denied (publickey)`.
-  - `gh`: not installed.
-- GitHub Actions status could not be confirmed through the available connector: commit status returned no statuses and workflow-run lookup returned no runs. The workflow file is present on `master`; if Actions are disabled for the repo, enable Actions in repository settings and rerun.
-
-## Required Operator Action
-
-1. Enable or confirm GitHub Actions for `lightworker4love/inspirit-truthos`.
-2. Install/start Docker Desktop locally if local `docker compose` validation is required.
-3. Resolve one local Git credential path:
-   - install/login `gh`, or
-   - configure HTTPS PAT, or
-   - register the local SSH public key in GitHub.
+  - `gh`: not installed/authenticated.
 
 ---
 
