@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import sqlite3
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -109,3 +110,66 @@ def test_get_primary_pattern_returns_highest_weight():
     engine.get_soul_map = MagicMock(return_value=soul_map)
     result = engine.get_primary_pattern("user-001")
     assert "Abandonment" in result
+
+
+def test_update_from_query_result_persists_new_soul_map(tmp_path):
+    db_path = tmp_path / "truthos.db"
+    with sqlite3.connect(db_path) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.executescript(
+            """
+            CREATE TABLE soulmaps (
+              id TEXT PRIMARY KEY,
+              userid TEXT NOT NULL UNIQUE,
+              recurringpatternsjson TEXT,
+              limitingbeliefsjson TEXT,
+              emotionalsignaturesjson TEXT,
+              activelessonsjson TEXT,
+              evolutionstage TEXT,
+              lasttruthshiftat TEXT,
+              createdat TEXT NOT NULL,
+              updatedat TEXT NOT NULL,
+              patternweightsjson TEXT,
+              integrateddimensionsjson TEXT,
+              transcendedpatternsjson TEXT,
+              evolutionhistoryjson TEXT,
+              soulmapsummary TEXT
+            );
+            CREATE TABLE blindspotarchives (
+              id TEXT PRIMARY KEY,
+              userid TEXT NOT NULL,
+              title TEXT NOT NULL,
+              triggerpattern TEXT NOT NULL,
+              knowntheory TEXT,
+              practicalfailuremode TEXT,
+              suggestedanchorsjson TEXT,
+              relatedpuzzlesjson TEXT,
+              frequency INTEGER DEFAULT 1,
+              lastseenat TEXT,
+              createdat TEXT NOT NULL,
+              severity TEXT DEFAULT 'medium',
+              domainsjson TEXT,
+              resolutionstatus TEXT DEFAULT 'active',
+              resolutionat TEXT
+            );
+            """
+        )
+        engine = SoulMapEngine(connection)
+        changes = engine.update_from_query_result(
+            user_id="user-write",
+            detected_patterns=["relationship:REL_001"],
+            matched_dimension="relationship",
+            matched_principle_id="REL_001",
+            belief_shift_detected=False,
+            discovery_triggered=False,
+            session_id="sess-1",
+        )
+        row = connection.execute(
+            "SELECT recurringpatternsjson, patternweightsjson FROM soulmaps WHERE userid = ?",
+            ("user-write",),
+        ).fetchone()
+
+    assert changes["new_patterns"] == ["relationship:REL_001"]
+    assert row is not None
+    assert "relationship:REL_001" in row["recurringpatternsjson"]
+    assert "relationship:REL_001" in row["patternweightsjson"]
