@@ -31,6 +31,35 @@ Sprint 004 introduces `truth_evals` for query verification audit records:
 - `discovery_triggered INTEGER DEFAULT 0`
 - `created_at TEXT NOT NULL`
 
+## `soulmaps`
+
+Sprint 006 adds Soul Map depth tracking. If the table does not exist yet,
+migration 005 creates it before adding the depth columns.
+
+- `patternweightsjson TEXT`: JSON object keyed by pattern id with frequency, last-seen timestamp, and decay-weighted significance.
+- `integrateddimensionsjson TEXT`: JSON array of dimensions where the user shows consistent truth-alignment.
+- `transcendedpatternsjson TEXT`: JSON array of resolved historical patterns retained for longitudinal context.
+- `evolutionhistoryjson TEXT`: JSON array of stage transitions and their trigger patterns.
+- `soulmapsummary TEXT`: 3-5 sentence synthesis used as query context.
+
+## `blindspotarchives`
+
+Sprint 006 adds blind-spot depth tracking:
+
+- `severity TEXT DEFAULT 'medium'`: one of `low`, `medium`, `high`, `critical`.
+- `domainsjson TEXT`: JSON array of life domains where the blind spot appears.
+- `resolutionstatus TEXT DEFAULT 'active'`: one of `active`, `softening`, `integrated`, `transcended`.
+- `resolutionat TEXT`: timestamp for the first non-active resolution state.
+
+## `hardcasebuffer`
+
+Sprint 006 introduces `hardcasebuffer` for Coach Review escalation:
+
+- `userid TEXT PRIMARY KEY`
+- `reasons TEXT NOT NULL`: JSON array of hard-case reasons.
+- `sessionid TEXT`
+- `createdat TEXT NOT NULL`
+
 ## API Additions
 
 `POST /api/truth/query` keeps existing response fields and adds:
@@ -42,3 +71,10 @@ Sprint 004 introduces `truth_evals` for query verification audit records:
 - `truth_map.reality_layer`
 - `truth_map.truth_claim`
 - `truth_map.wisdom_anchor`
+- `writeback.soul_map_changes`
+- `hard_case_flag` and `coach_review_recommended` when hard-case detection triggers
+
+Sprint 006 also adds:
+
+- `GET /api/soul-map/{user_id}`
+- `GET /api/soul-map/{user_id}/blind-spots`
