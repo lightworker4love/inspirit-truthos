@@ -378,7 +378,7 @@ class SoulMapEngine:
                   soulmapsummary, createdat, updatedat
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (str(uuid4()), user_id, *data),
+                (str(uuid4()), user_id, *data[:-1], now, data[-1]),
             )
         self._commit()
 
