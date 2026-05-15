@@ -11,6 +11,7 @@ from app.db import connect_db, get_db_path
 from app.seed_loader import load_seed_files
 from scripts.run_migration_004 import run_migration as run_migration_004
 from scripts.run_migration_005 import run_migration as run_migration_005
+from scripts.run_migration_006 import run_migration as run_migration_006
 
 
 def run_migration() -> None:
@@ -20,6 +21,7 @@ def run_migration() -> None:
         connection.commit()
     run_migration_004()
     run_migration_005()
+    run_migration_006()
 
 
 def main() -> int:
