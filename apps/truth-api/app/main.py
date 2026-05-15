@@ -5,9 +5,11 @@ import sqlite3
 from datetime import datetime, timezone
 from fastapi import FastAPI
 
+from api.designer import router as designer_router
 from api.soul_map import router as soul_map_router
 from app.dimension_classifier import classify_dimensions
 from app.db import connect_db
+from app.designer_agent import DesignerAgent
 from app.embedding_pipeline import get_embedding_mode
 from app.gateway_check import check_embedding_gateway
 from app.models import TruthQueryRequest
@@ -21,6 +23,7 @@ from app.soul_map_engine import SoulMapEngine
 from app.vector_index import vector_index_exists
 
 app = FastAPI(title="TruthOS API", version="0.1.0")
+app.include_router(designer_router)
 app.include_router(soul_map_router)
 
 
@@ -134,6 +137,7 @@ def truth_query(payload: TruthQueryRequest) -> dict:
     }
     soul_map_changes = {"updated": [], "new_patterns": [], "stage_change": None}
     hard_case = {"is_hard_case": False}
+    designer_review = None
     try:
         with connect_db() as connection:
             soul_map_engine = SoulMapEngine(db_client=connection)
@@ -158,19 +162,38 @@ def truth_query(payload: TruthQueryRequest) -> dict:
                 )
             hard_case = soul_map_engine.detect_hard_case(payload.user_id)
             if hard_case.get("is_hard_case"):
-                connection.execute(
-                    """
-                    INSERT OR REPLACE INTO hardcasebuffer
-                      (userid, reasons, sessionid, createdat)
-                    VALUES (?, ?, ?, ?)
-                    """,
-                    (
-                        payload.user_id,
-                        json.dumps(hard_case["reasons"], ensure_ascii=False),
-                        payload.session_id,
-                        datetime.now(timezone.utc).isoformat(),
-                    ),
-                )
+                created_at = datetime.now(timezone.utc).isoformat()
+                if _table_has_column(connection, "hardcasebuffer", "status"):
+                    connection.execute(
+                        """
+                        INSERT OR REPLACE INTO hardcasebuffer
+                          (userid, reasons, sessionid, createdat, status)
+                        VALUES (?, ?, ?, ?, 'pending')
+                        """,
+                        (
+                            payload.user_id,
+                            json.dumps(hard_case["reasons"], ensure_ascii=False),
+                            payload.session_id,
+                            created_at,
+                        ),
+                    )
+                    designer_review = DesignerAgent(db_client=connection).review_hard_case(
+                        payload.user_id
+                    )
+                else:
+                    connection.execute(
+                        """
+                        INSERT OR REPLACE INTO hardcasebuffer
+                          (userid, reasons, sessionid, createdat)
+                        VALUES (?, ?, ?, ?)
+                        """,
+                        (
+                            payload.user_id,
+                            json.dumps(hard_case["reasons"], ensure_ascii=False),
+                            payload.session_id,
+                            created_at,
+                        ),
+                    )
                 connection.commit()
     except sqlite3.DatabaseError:
         soul_map_changes = {"updated": [], "new_patterns": [], "stage_change": None}
@@ -203,6 +226,11 @@ def truth_query(payload: TruthQueryRequest) -> dict:
         result["hard_case_flag"] = True
         result["coach_review_recommended"] = True
         result["hard_case_reasons"] = hard_case.get("reasons", [])
+    if designer_review:
+        result["designer_review"] = designer_review
+        result["knowledge_evolution_written"] = bool(
+            designer_review.get("knowledge_evolution")
+        )
     return result
 
 
@@ -249,3 +277,8 @@ def _detect_blindspot_candidate(message: str, top_puzzle: dict | None) -> bool:
         "還是",
     )
     return bool(top_puzzle.get("misbelief")) and any(marker in text for marker in markers)
+
+
+def _table_has_column(connection: sqlite3.Connection, table: str, column: str) -> bool:
+    rows = connection.execute(f"PRAGMA table_info({table})").fetchall()
+    return column in {row[1] for row in rows}
