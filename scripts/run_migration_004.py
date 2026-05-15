@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sqlite3
 import sys
 from pathlib import Path
@@ -23,13 +24,25 @@ NEW_COLUMNS = [
 
 
 def run_migration() -> None:
-    with connect_db() as connection:
+    with _connect() as connection:
         connection.execute("PRAGMA foreign_keys = ON")
         _ensure_truth_evals(connection)
         for table, column, column_type in NEW_COLUMNS:
             _add_column_if_missing(connection, table, column, column_type)
         connection.commit()
-    print(f"Migration 004 complete for {get_db_path()}")
+    target = os.environ.get("SQLITE_DB_PATH") or str(get_db_path())
+    print(f"Migration 004 complete for {target}")
+
+
+def _connect() -> sqlite3.Connection:
+    configured = os.environ.get("SQLITE_DB_PATH")
+    if configured:
+        path = Path(configured)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        connection = sqlite3.connect(path)
+        connection.row_factory = sqlite3.Row
+        return connection
+    return connect_db()
 
 
 def _ensure_truth_evals(connection: sqlite3.Connection) -> None:
