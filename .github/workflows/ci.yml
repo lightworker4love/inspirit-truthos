@@ -36,6 +36,13 @@ jobs:
         env:
           TRUTHOS_DB_PATH: /tmp/test_truthos.db
 
+      - name: Run explicit migrations on test DB
+        run: |
+          SQLITE_DB_PATH=/tmp/test_truthos.db python scripts/run_migration_004.py
+          SQLITE_DB_PATH=/tmp/test_truthos.db python scripts/run_migration_005.py
+        env:
+          SQLITE_DB_PATH: /tmp/test_truthos.db
+
       - name: Run pytest
         run: |
           pytest tests/ -v --tb=short
@@ -80,9 +87,9 @@ jobs:
           RESPONSE=$(curl -fsS -X POST http://localhost:18000/api/truth/query \
             -H "Content-Type: application/json" \
             -d '{
-              "userid": "test-sprint005",
-              "sessionid": "sess-sprint005-001",
-              "message": "我最近感覺很疲憊，什麼都提不起勁，不知道自己在做什麼",
+              "userid": "test-sprint006",
+              "sessionid": "sess-sprint006-001",
+              "message": "我知道自己一直在逃避，但還是做不到直接面對關係裡的衝突",
               "mode": "mentor",
               "depth": "deep",
               "language": "zh-TW"
@@ -92,6 +99,7 @@ jobs:
           import json, os, sys
           r = json.loads(os.environ["RESPONSE"])
           tm = r.get("truth_map", {})
+          writeback = r.get("writeback", {})
           checks = {
               "truth_map present": bool(tm),
               "fact_layer present": bool(tm.get("fact_layer")),
@@ -104,11 +112,25 @@ jobs:
               "legacy principles present": "principles" in r,
               "legacy puzzles present": "puzzles" in r,
               "legacy response present": "response" in r,
+              "soul_map_changes present": "soul_map_changes" in writeback,
+              "user_context present": "user_context" in writeback,
           }
           for name, ok in checks.items():
               print(f"{'PASS' if ok else 'FAIL'} - {name}")
           if not all(checks.values()):
               sys.exit(1)
+          PY
+
+      - name: Validate soul map endpoint
+        run: |
+          MAP=$(curl -fsS http://localhost:18000/api/soul-map/test-sprint006)
+          echo "$MAP" | python3 -m json.tool
+          MAP="$MAP" python3 - <<'PY'
+          import json, os
+          m = json.loads(os.environ["MAP"])
+          assert m["status"] == "active"
+          assert isinstance(m.get("recurring_patterns"), list)
+          assert isinstance(m.get("active_lessons"), list)
           PY
 
       - name: Validate truthevals writeback
