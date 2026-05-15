@@ -40,6 +40,7 @@ jobs:
         run: |
           SQLITE_DB_PATH=/tmp/test_truthos.db python scripts/run_migration_004.py
           SQLITE_DB_PATH=/tmp/test_truthos.db python scripts/run_migration_005.py
+          SQLITE_DB_PATH=/tmp/test_truthos.db python scripts/run_migration_006.py
         env:
           SQLITE_DB_PATH: /tmp/test_truthos.db
 
@@ -131,6 +132,44 @@ jobs:
           assert m["status"] == "active"
           assert isinstance(m.get("recurring_patterns"), list)
           assert isinstance(m.get("active_lessons"), list)
+          PY
+
+      - name: Validate DesignerAgent endpoint
+        run: |
+          docker compose exec -T truth-api python - <<'PY'
+          import json
+          import sqlite3
+          from datetime import datetime, timezone
+          db_path = "/app/data/truthos.db"
+          with sqlite3.connect(db_path) as conn:
+              conn.execute(
+                  """
+                  INSERT OR REPLACE INTO hardcasebuffer
+                    (userid, reasons, sessionid, createdat, status)
+                  VALUES (?, ?, ?, ?, 'pending')
+                  """,
+                  (
+                      "test-designer-007",
+                      json.dumps(["Pattern(s) ['relationship:control'] recurring 5+ times with high weight"]),
+                      "sess-designer-007",
+                      datetime.now(timezone.utc).isoformat(),
+                  ),
+              )
+              conn.commit()
+          PY
+          DESIGNER=$(curl -fsS -X POST http://localhost:18000/api/designer/hard-cases/test-designer-007/review)
+          echo "$DESIGNER" | python3 -m json.tool
+          DESIGNER="$DESIGNER" python3 - <<'PY'
+          import json, os
+          r = json.loads(os.environ["DESIGNER"])
+          assert r["hardcase_id"] == "test-designer-007"
+          assert r["evaluation"]["status"] in {"completed", "inconclusive"}
+          assert r["prompt_a"]["id"] != r["prompt_b"]["id"]
+          assert r["designer_review"]["reviewedby"] == "designer_agent"
+          assert r["knowledge_evolution"]["sourcetype"] == "hardcasebuffer"
+          if r["evaluation"]["status"] == "completed":
+              assert r["evaluation"]["winner_id"]
+              assert r["knowledge_evolution"]["changetype"] == "prompt_variant_won"
           PY
 
       - name: Validate truthevals writeback
