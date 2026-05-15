@@ -17,7 +17,12 @@ Sprint 006 brings the Soul Map tables to life:
 
 - `.venv/bin/python -m pytest tests/test_soul_map_engine.py tests/test_migration_005.py -q` passed: 9 tests.
 - `.venv/bin/python -m py_compile` passed for changed Python files.
-- Full `pytest tests/` in this local scaffold is blocked because this folder is not a full repo checkout and is missing app modules that exist on `master`; GitHub Actions remains the source of truth for full-stack validation.
+- GitHub Actions `TruthOS CI #23` passed on `master`:
+  - `test`: success
+  - `full-stack`: success
+  - `py-compile`: success
+  - full-stack validated live Soul Map writeback and `GET /api/soul-map/{user_id}`.
+- Full `pytest tests/` in this local scaffold is blocked because this folder is not a full repo checkout and is missing app modules that exist on `master`; GitHub Actions passed against the real repo.
 
 ## Operational Notes
 
