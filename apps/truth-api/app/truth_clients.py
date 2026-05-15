@@ -31,22 +31,34 @@ class SQLiteSoulMapClient:
                     "SELECT name FROM sqlite_master WHERE type='table'"
                 ).fetchall()
             }
-            if "soul_maps" not in tables:
+            if "soulmaps" not in tables and "soul_maps" not in tables:
                 return []
-            rows = connection.execute(
-                """
-                SELECT recurring_patterns_json
-                  FROM soul_maps
-                 WHERE user_id = ?
-                 ORDER BY updated_at DESC
-                 LIMIT 1
-                """,
-                (user_id,),
-            ).fetchall()
+            if "soulmaps" in tables:
+                rows = connection.execute(
+                    """
+                    SELECT recurringpatternsjson AS patterns
+                      FROM soulmaps
+                     WHERE userid = ?
+                     ORDER BY updatedat DESC
+                     LIMIT 1
+                    """,
+                    (user_id,),
+                ).fetchall()
+            else:
+                rows = connection.execute(
+                    """
+                    SELECT recurring_patterns_json AS patterns
+                      FROM soul_maps
+                     WHERE user_id = ?
+                     ORDER BY updated_at DESC
+                     LIMIT 1
+                    """,
+                    (user_id,),
+                ).fetchall()
         if not rows:
             return []
         try:
-            value = json.loads(rows[0]["recurring_patterns_json"] or "[]")
+            value = json.loads(rows[0]["patterns"] or "[]")
         except json.JSONDecodeError:
             return []
         return value if isinstance(value, list) else []
