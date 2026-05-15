@@ -1,3 +1,32 @@
+# Sprint 007 - Designer Agent + Knowledge Evolution Loop - COMPLETE
+
+Date: 2026-05-16
+
+## Summary
+
+Sprint 007 closes the hard-case loop:
+
+- Added migration 006 for hard-case status, Designer Agent summaries, prompt variants, AB tests, designer reviews, and knowledge evolution records.
+- Added `DesignerAgent` with a truth-first weighted rubric, hard-case diagnosis, prompt A/B generation, deterministic AB evaluation, knowledge-layer writeback, and coach escalation when inconclusive.
+- Added Designer Agent API endpoints for reviewing a single hard case and processing pending hard cases.
+- Wired `/api/truth/query` so detected hard cases are written as pending, immediately reviewed when migration 006 columns are present, and returned with `designer_review` plus `knowledge_evolution_written`.
+- Updated seed import so fresh databases run migrations 004, 005, and 006.
+- Added tests for migration 006 idempotency/preservation and Designer Agent resolution/escalation behavior.
+
+## Validation
+
+- `.venv/bin/python -m pytest tests/test_migration_006.py tests/test_designer_agent.py -q` passed: 6 tests.
+- `.venv/bin/python -m py_compile` passed for changed Python files.
+- Full local `pytest tests/` is blocked in this scaffold by missing full-repo modules such as `app.dimension_classifier`; GitHub Actions must validate against the real repo checkout.
+
+## Operational Notes
+
+- Local shell git push is still blocked by missing credentials.
+- Remote publishing should use the GitHub connector and target `master`.
+- CI should run migrations 004, 005, and 006 before pytest and validate the Designer Agent endpoint in full-stack.
+
+---
+
 # Sprint 006 - Soul Map Engine - COMPLETE
 
 Date: 2026-05-15
