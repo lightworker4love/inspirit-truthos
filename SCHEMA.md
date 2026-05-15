@@ -53,11 +53,68 @@ Sprint 006 adds blind-spot depth tracking:
 
 ## `hardcasebuffer`
 
-Sprint 006 introduces `hardcasebuffer` for Coach Review escalation:
+Sprint 006 introduces `hardcasebuffer` for Coach Review escalation. Sprint 007
+adds Designer Agent resolution state:
 
 - `userid TEXT PRIMARY KEY`
 - `reasons TEXT NOT NULL`: JSON array of hard-case reasons.
 - `sessionid TEXT`
+- `createdat TEXT NOT NULL`
+- `status TEXT DEFAULT 'pending'`: one of `pending`, `resolved`, `coach_review`.
+- `summaryjson TEXT`: JSON block containing Designer Agent diagnosis and AB evaluation.
+- `resolvedat TEXT`: timestamp when the system resolved the hard case without human escalation.
+- `resolutionnote TEXT`: human-readable resolution or escalation reason.
+
+## `promptversions`
+
+Sprint 007 adds prompt-variant storage for hard-case experiments:
+
+- `id TEXT PRIMARY KEY`
+- `hardcaseid TEXT NOT NULL`
+- `prompttemplate TEXT NOT NULL`
+- `promptlabel TEXT NOT NULL`
+- `prompttype TEXT NOT NULL`
+- `version INTEGER NOT NULL`
+- `parentversionid TEXT`
+- `createdat TEXT NOT NULL`
+
+## `promptabtests`
+
+Sprint 007 adds deterministic AB-test audit records:
+
+- `id TEXT PRIMARY KEY`
+- `hardcaseid TEXT NOT NULL`
+- `promptaid TEXT NOT NULL`
+- `promptbid TEXT NOT NULL`
+- `status TEXT NOT NULL`: `completed` or `inconclusive`.
+- `winnerid TEXT`
+- `evaluationjson TEXT`: weighted rubric scores and recommendation.
+- `startdat TEXT NOT NULL`
+- `completedat TEXT`
+
+## `designerreviews`
+
+Sprint 007 records the Designer Agent's diagnosis and action:
+
+- `id TEXT PRIMARY KEY`
+- `hardcaseid TEXT NOT NULL`
+- `reviewedby TEXT NOT NULL`
+- `findingsjson TEXT NOT NULL`
+- `newprincipleproposed INTEGER DEFAULT 0`
+- `promptwinner TEXT`
+- `action TEXT NOT NULL`
+- `createdat TEXT NOT NULL`
+
+## `knowledgeevolutions`
+
+Sprint 007 records knowledge-layer changes created from hard-case review:
+
+- `id TEXT PRIMARY KEY`
+- `sourcetype TEXT NOT NULL`
+- `sourceid TEXT NOT NULL`
+- `changetype TEXT NOT NULL`
+- `targetid TEXT`
+- `rationaljson TEXT`
 - `createdat TEXT NOT NULL`
 
 ## API Additions
@@ -73,8 +130,14 @@ Sprint 006 introduces `hardcasebuffer` for Coach Review escalation:
 - `truth_map.wisdom_anchor`
 - `writeback.soul_map_changes`
 - `hard_case_flag` and `coach_review_recommended` when hard-case detection triggers
+- `designer_review` and `knowledge_evolution_written` when a hard case is automatically resolved by Sprint 007 Designer Agent
 
 Sprint 006 also adds:
 
 - `GET /api/soul-map/{user_id}`
 - `GET /api/soul-map/{user_id}/blind-spots`
+
+Sprint 007 also adds:
+
+- `POST /api/designer/hard-cases/{hardcase_id}/review`
+- `POST /api/designer/hard-cases/review-pending`
