@@ -1,3 +1,23 @@
+# Sprint 008 - Coach Review UI + Truth Console MVP - COMPLETE
+
+Date: 2026-05-17
+Base: 98510fe0a4a553756df134c1639209a813ba5437
+
+## Delivered
+
+- `GET /console` serves `truth-console.html`.
+- 5-tab Truth Console: Soul Map, Blind Spots, Hard Cases, Designer Reviews, Knowledge Evolution.
+- Added `PATCH /api/soul-map/{user_id}/pattern`.
+- Added `PATCH /api/soul-map/{user_id}/blind-spot/{id}`.
+- Added Designer console API reads for hard cases, reviews, and knowledge evolution.
+- Added human coach review writeback: `POST /api/designer/coach-review/{hardcase_id}`.
+- Added `tests/test_truth_console.py` with console route, Soul Map, Blind Spots, PATCH, and hard-case filter coverage.
+- Updated CI with live console check and Soul Map API check.
+
+First sprint where a human can sit in front of TruthOS and use it.
+
+---
+
 # Sprint 007 - Designer Agent + Knowledge Evolution Loop - COMPLETE
 
 Date: 2026-05-16
