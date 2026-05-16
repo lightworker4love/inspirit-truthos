@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from datetime import datetime, timezone
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 from api.designer import router as designer_router
 from api.soul_map import router as soul_map_router
@@ -23,8 +27,16 @@ from app.soul_map_engine import SoulMapEngine
 from app.vector_index import vector_index_exists
 
 app = FastAPI(title="TruthOS API", version="0.1.0")
+STATIC_DIR = Path(__file__).resolve().parents[1] / "static"
+os.makedirs(STATIC_DIR, exist_ok=True)
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.include_router(designer_router)
 app.include_router(soul_map_router)
+
+
+@app.get("/console", include_in_schema=False)
+async def truth_console():
+    return FileResponse(STATIC_DIR / "truth-console.html")
 
 
 @app.get("/healthz")
