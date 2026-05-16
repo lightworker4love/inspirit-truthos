@@ -51,6 +51,13 @@ jobs:
           TRUTHOS_DB_PATH: /tmp/test_truthos.db
           TESTING: "true"
 
+      - name: Run Hermes Bridge tests
+        run: |
+          pytest tests/test_hermes_bridge.py -v
+        env:
+          TRUTHOS_DB_PATH: /tmp/test_truthos.db
+          TESTING: "true"
+
       - name: Validate truth property tagging
         run: |
           python scripts/tag_truth_properties.py --db /tmp/test_truthos.db --report
@@ -143,6 +150,18 @@ jobs:
           assert 'evolution_stage' in r, 'evolution_stage missing'
           print('Soul Map API: PASS')
           "
+
+      - name: Verify TruthOS reachable from bridge
+        run: |
+          python3 - <<'PY'
+          import json
+          import urllib.request
+          with urllib.request.urlopen('http://localhost:18000/healthz', timeout=5) as response:
+              assert response.status == 200
+              payload = json.loads(response.read().decode())
+              assert payload.get('status') == 'ok'
+          print('TruthOS bridge reachability: PASS')
+          PY
 
       - name: Validate DesignerAgent endpoint
         run: |
