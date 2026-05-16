@@ -8,6 +8,7 @@ services:
       TRUTHOS_DB_PATH: ${TRUTHOS_DB_PATH:-/app/data/truthos.db}
       TRUTHOS_API_HOST: ${TRUTHOS_API_HOST:-0.0.0.0}
       TRUTHOS_API_PORT: ${TRUTHOS_API_PORT:-8000}
+      TRUTHOS_BASE_URL: ${TRUTHOS_BASE_URL:-http://truth-api:8000}
     command: >
       sh -lc "python scripts/seed_import.py
       && cd apps/truth-api
@@ -16,3 +17,9 @@ services:
       - ./:/app
     ports:
       - "18000:${TRUTHOS_API_PORT:-8000}"
+    networks:
+      - inspirit-net
+
+networks:
+  inspirit-net:
+    driver: bridge
