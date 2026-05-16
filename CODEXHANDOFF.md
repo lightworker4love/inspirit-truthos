@@ -1,3 +1,24 @@
+# Sprint 009 - Hermes x TruthOS Integration - COMPLETE
+
+Date: 2026-05-17
+Base: 7001a71
+
+## Delivered
+
+- `packages/hermes_truthos_bridge/` with `TruthOSClient`, `TruthOSHook`, and fire-and-forget helper.
+- `packages/hermes-truthos-bridge/` compatibility/doc directory from the Sprint 009 brief.
+- Fire-and-enrich async pattern: Hermes never blocks on TruthOS.
+- Soul context pre-loading at session start through `TruthOSHook.get_soul_context()`.
+- Docker Compose network `inspirit-net` attached to `truth-api`; ready for a future Hermes service.
+- `TRUTHOS_BASE_URL` environment support in `TruthOSClient`.
+- `tests/test_hermes_bridge.py` with timeout, connection error, enrichment, guidance, and soul context coverage.
+- CI bridge reachability check added.
+
+First sprint where real conversations can flow into TruthOS.
+Soul Map can now accumulate from live Hermes traffic.
+
+---
+
 # Sprint 008 - Coach Review UI + Truth Console MVP - COMPLETE
 
 Date: 2026-05-17
