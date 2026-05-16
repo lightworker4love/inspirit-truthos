@@ -134,6 +134,16 @@ jobs:
           assert isinstance(m.get("active_lessons"), list)
           PY
 
+      - name: Verify Truth Console live
+        run: |
+          curl -sf http://localhost:18000/console | grep -q "TruthOS Console" && echo "Console: PASS" || (echo "Console: FAIL" && exit 1)
+          curl -sf "http://localhost:18000/api/soul-map/test-sprint006" | python3 -c "
+          import json, sys
+          r = json.load(sys.stdin)
+          assert 'evolution_stage' in r, 'evolution_stage missing'
+          print('Soul Map API: PASS')
+          "
+
       - name: Validate DesignerAgent endpoint
         run: |
           docker compose exec -T truth-api python - <<'PY'
