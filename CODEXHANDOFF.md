@@ -1,3 +1,29 @@
+# Sprint 010 - Real Integration - COMPLETE
+
+Date: 2026-05-17
+Base: 8a58b5b
+
+## Delivered
+
+- Added runnable Hermes FastAPI service under `apps/hermes_agent/` with `/health`, `/chat`, and `/session/start/{user_id}`.
+- Added `apps/hermes-agent/Dockerfile` and wired `hermes-agent` into `docker-compose.yml` on port `8001`.
+- Added live session APIs for the Truth Console:
+  - `GET /api/sessions/recent`
+  - `GET /api/sessions/{session_id}/truth-scores`
+  - `GET /api/sessions/stats/summary`
+- Registered the session router in the TruthOS FastAPI app and added `/health` as an alias of `/healthz`.
+- Added a `Live Monitor` tab to `/console` with summary metrics, recent sessions, truth-score timeline inspection, and 10-second refresh with Pause/Resume controls.
+- Added skipped-by-default Docker E2E tests in `tests/test_integration_e2e.py`.
+- Updated CI to validate Hermes health/chat and the Live Monitor APIs in the full-stack job.
+
+## Validation
+
+- `python3 -m py_compile` passed locally for the new Hermes service, session API, TruthOS app wiring, and bridge modules.
+- `.venv/bin/python -m pytest tests/test_integration_e2e.py -q` passed locally with 2 skipped, as intended unless `RUN_E2E=true`.
+- Full Docker validation is performed by GitHub Actions because this local folder is a scaffold and local Docker/git credentials are unavailable.
+
+---
+
 # Sprint 009 - Hermes x TruthOS Integration - COMPLETE
 
 Date: 2026-05-17
