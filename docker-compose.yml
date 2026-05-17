@@ -20,6 +20,19 @@ services:
     networks:
       - inspirit-net
 
+  hermes-agent:
+    build:
+      context: .
+      dockerfile: apps/hermes-agent/Dockerfile
+    environment:
+      TRUTHOS_BASE_URL: http://truth-api:8000
+    depends_on:
+      - truth-api
+    ports:
+      - "8001:8001"
+    networks:
+      - inspirit-net
+
 networks:
   inspirit-net:
     driver: bridge
