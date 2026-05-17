@@ -1,0 +1,53 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  test:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      RAILWAY_PROJECT_ID: 2a0c0d84-ad7b-493a-84dd-eebcda0248cf
+      RAILWAY_ENVIRONMENT: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Verify Railway token
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "::error::Missing RAILWAY_TOKEN GitHub Actions secret."
+            exit 1
+          fi
+
+      - name: Deploy truth-api
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway up \
+            --project "$RAILWAY_PROJECT_ID" \
+            --environment "$RAILWAY_ENVIRONMENT" \
+            --service truth-api \
+            --detach \
+            --message "GitHub Actions deploy truth-api ${GITHUB_SHA}"
+
+      - name: Deploy hermes-agent
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway up \
+            --project "$RAILWAY_PROJECT_ID" \
+            --environment "$RAILWAY_ENVIRONMENT" \
+            --service hermes-agent \
+            --detach \
+            --message "GitHub Actions deploy hermes-agent ${GITHUB_SHA}"
