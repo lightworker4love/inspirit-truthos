@@ -23,16 +23,16 @@ jobs:
 
       - name: Verify Railway token
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          if [ -z "$RAILWAY_TOKEN" ]; then
+          if [ -z "$RAILWAY_API_TOKEN" ]; then
             echo "::error::Missing RAILWAY_TOKEN GitHub Actions secret."
             exit 1
           fi
 
       - name: Deploy truth-api
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           railway up \
             --project "$RAILWAY_PROJECT_ID" \
@@ -43,7 +43,7 @@ jobs:
 
       - name: Deploy hermes-agent
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           railway up \
             --project "$RAILWAY_PROJECT_ID" \

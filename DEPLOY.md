@@ -108,4 +108,4 @@ GitHub Actions requires:
 
 | Secret | Purpose |
 | --- | --- |
-| `RAILWAY_TOKEN` | Allows the deploy workflow to call Railway CLI |
+| `RAILWAY_TOKEN` | Railway account token from Account Settings -> Tokens. The workflow maps this secret to `RAILWAY_API_TOKEN` for Railway CLI authentication. |
