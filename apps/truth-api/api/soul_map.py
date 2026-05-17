@@ -36,19 +36,24 @@ async def get_soul_map(user_id: str) -> dict:
                 "minimum_interactions_needed": 3,
             }
         top_blind_spots = _get_top_blind_spots(connection, user_id)
+        recent_patterns = _recent_patterns(soul_map.get("recurring_patterns", []))
 
     return {
         "user_id": user_id,
         "status": "active",
         "evolution_stage": soul_map.get("evolution_stage"),
         "recurring_patterns": soul_map.get("recurring_patterns", []),
+        "recent_patterns": recent_patterns,
         "pattern_weights": soul_map.get("pattern_weights", {}),
         "active_lessons": soul_map.get("active_lessons", []),
         "integrated_dimensions": soul_map.get("integrated_dimensions", []),
         "top_blind_spots": top_blind_spots,
+        "blind_spots": top_blind_spots,
         "summary": soul_map.get("soul_map_summary", ""),
         "last_truth_shift_at": soul_map.get("last_truth_shift_at"),
         "evolution_history": soul_map.get("evolution_history", []),
+        "created_at": soul_map.get("created_at"),
+        "updated_at": soul_map.get("updated_at"),
     }
 
 
@@ -166,6 +171,24 @@ def _blind_spot_row(row: Any) -> dict:
     for field in ("suggestedanchorsjson", "relatedpuzzlesjson", "domainsjson"):
         item[field] = _loads(item.get(field), [])
     return item
+
+
+def _recent_patterns(patterns: list[dict]) -> list[str]:
+    now = datetime.now(timezone.utc)
+    recent = []
+    for pattern in patterns:
+        first_seen = pattern.get("first_seen")
+        if not first_seen:
+            continue
+        try:
+            parsed = datetime.fromisoformat(first_seen.replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        if (now - parsed).total_seconds() <= 300:
+            recent.append(pattern.get("id") or pattern.get("description") or "")
+    return [pattern for pattern in recent if pattern]
 
 
 def _loads(raw: Any, default: Any) -> Any:

@@ -1,3 +1,31 @@
+# Sprint 011 - First Real Conversation + Soul Map Observation - COMPLETE
+
+Date: 2026-05-17
+Base: d9176a3
+
+## Delivered
+
+- `scripts/first_conversation.py` sends a 5-turn scripted coaching conversation through Hermes into TruthOS.
+- Added `SoulMapEngine.get_or_create_soul_map()` so a new user receives a Soul Map on the first query.
+- `/api/truth/query` now returns `soul_map_updated` and `soul_map_delta`.
+- Added first-conversation pattern detection for `abandonment_cycle`, `fear_of_completion`, `inherited_belief_virus`, `identity_collapse`, and `truth_seeking_awakening`.
+- Added identity-collapse hard-case detection for first-conversation flow.
+- `/api/soul-map/{user_id}` now exposes `updated_at`, `created_at`, `recent_patterns`, and `blind_spots`.
+- Truth Console Soul Map tab shows "Updated just now" and "New pattern detected" indicators for recent changes.
+- Added `tests/test_first_conversation.py`.
+- CI full-stack job now sends a first conversation smoke message and verifies Soul Map auto-creation.
+
+## Run
+
+```bash
+docker compose up -d
+python scripts/first_conversation.py
+```
+
+Then open `http://localhost:18000/console` and load `user-first-light`.
+
+---
+
 # Sprint 010 - Real Integration - COMPLETE
 
 Date: 2026-05-17

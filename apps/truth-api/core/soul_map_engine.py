@@ -29,6 +29,16 @@ class SoulMapEngine:
             return None
         return self._deserialize(row)
 
+    def get_or_create_soul_map(self, user_id: str) -> dict:
+        soul_map = self.get_soul_map(user_id)
+        if soul_map:
+            return soul_map
+
+        now = datetime.now(timezone.utc).isoformat()
+        soul_map = self._create_empty(user_id, now)
+        self._save(user_id, soul_map, now)
+        return soul_map
+
     def get_primary_pattern(self, user_id: str) -> str:
         soul_map = self.get_soul_map(user_id)
         if not soul_map:
@@ -63,12 +73,16 @@ class SoulMapEngine:
         discovery_triggered: bool,
         session_id: str,
     ) -> dict:
-        soul_map = self.get_soul_map(user_id)
+        soul_map = self.get_or_create_soul_map(user_id)
         now = datetime.now(timezone.utc).isoformat()
         changes = {"updated": [], "new_patterns": [], "stage_change": None}
-
-        if soul_map is None:
-            soul_map = self._create_empty(user_id, now)
+        delta = {
+            "new_patterns": [],
+            "stage_change": None,
+            "new_blind_spots": [],
+            "lessons_updated": [],
+            "truth_score": 0,
+        }
 
         clean_patterns = [pattern for pattern in detected_patterns if pattern]
         for pattern in clean_patterns:
@@ -90,11 +104,18 @@ class SoulMapEngine:
                 )
                 existing_ids.add(pattern)
                 changes["new_patterns"].append(pattern)
+                delta["new_patterns"].append(pattern)
 
         if matched_principle_id:
+            existing_lessons = {
+                lesson.get("principle_id")
+                for lesson in soul_map.get("active_lessons", [])
+            }
             soul_map = self._update_active_lessons(
                 soul_map, matched_principle_id, matched_dimension, now
             )
+            if matched_principle_id not in existing_lessons:
+                delta["lessons_updated"].append(matched_principle_id)
 
         if belief_shift_detected or discovery_triggered:
             soul_map["last_truth_shift_at"] = now
@@ -107,9 +128,37 @@ class SoulMapEngine:
                     soul_map, old_stage, new_stage, trigger, now
                 )
                 changes["stage_change"] = {"from": old_stage, "to": new_stage}
+                delta["stage_change"] = changes["stage_change"]
 
         self._save(user_id, soul_map, now)
+        changes["updated_at"] = now
+        changes["updated"] = changes["updated"]
+        changes["delta"] = delta
+        changes["was_updated"] = bool(
+            changes["updated"]
+            or changes["new_patterns"]
+            or changes["stage_change"]
+            or delta["lessons_updated"]
+        )
         return changes
+
+    def update_soul_map(self, user_id: str, truth_result: dict, query: str) -> dict:
+        patterns = truth_result.get("detected_patterns") or truth_result.get("patterns") or []
+        if isinstance(patterns, str):
+            patterns = [patterns]
+        result = self.update_from_query_result(
+            user_id=user_id,
+            detected_patterns=patterns,
+            matched_dimension=truth_result.get("matched_dimension")
+            or truth_result.get("dimension")
+            or "discernment",
+            matched_principle_id=truth_result.get("matched_principle_id", ""),
+            belief_shift_detected=bool(truth_result.get("belief_shift_detected")),
+            discovery_triggered=bool(truth_result.get("discovery_triggered")),
+            session_id=truth_result.get("session_id", ""),
+        )
+        result["delta"]["truth_score"] = truth_result.get("truth_score", 0)
+        return {"updated": bool(result.get("was_updated")), "delta": result.get("delta", {})}
 
     def update_blind_spot(
         self,

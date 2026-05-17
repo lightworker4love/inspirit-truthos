@@ -196,6 +196,36 @@ jobs:
           print("Hermes chat: PASS")
           PY
 
+      - name: First conversation smoke test
+        run: |
+          FIRST=$(curl -fsS -X POST http://localhost:8001/chat \
+            -H "Content-Type: application/json" \
+            -d '{"user_id":"ci-first-light","session_id":"ci-s011","message":"I always give up before finishing what I start"}')
+          echo "$FIRST" | python3 -m json.tool
+          FIRST="$FIRST" python3 - <<'PY'
+          import json, os
+          data = json.loads(os.environ["FIRST"])
+          assert "response" in data, "response missing"
+          print("First conversation: PASS")
+          print("Soul Map Updated:", data.get("soul_map_updated", False))
+          print("Is Hard Case:", data.get("is_hard_case", False))
+          PY
+
+          sleep 2
+
+          MAP=$(curl -fsS http://localhost:18000/api/soul-map/ci-first-light)
+          echo "$MAP" | python3 -m json.tool
+          MAP="$MAP" python3 - <<'PY'
+          import json, os
+          data = json.loads(os.environ["MAP"])
+          assert "evolution_stage" in data, "evolution_stage missing"
+          assert data["evolution_stage"] == "awakening", data["evolution_stage"]
+          assert data.get("updated_at"), "updated_at missing"
+          print("Soul Map auto-created: PASS")
+          print("Stage:", data["evolution_stage"])
+          print("Patterns:", len(data.get("recurring_patterns", [])))
+          PY
+
       - name: Verify Live Monitor APIs
         run: |
           STATS=$(curl -fsS http://localhost:18000/api/sessions/stats/summary)

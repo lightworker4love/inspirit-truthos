@@ -104,7 +104,7 @@ def truth_query(payload: TruthQueryRequest) -> dict:
     try:
         with connect_db() as connection:
             soul_map_engine = SoulMapEngine(db_client=connection)
-            soul_map = soul_map_engine.get_soul_map(payload.user_id)
+            soul_map = soul_map_engine.get_or_create_soul_map(payload.user_id)
             user_context = {
                 "soul_map_summary": soul_map_engine.get_summary_for_injection(payload.user_id),
                 "primary_recurring_pattern": soul_map_engine.get_primary_pattern(payload.user_id),
@@ -171,7 +171,7 @@ def truth_query(payload: TruthQueryRequest) -> dict:
                 session_id=payload.session_id or "",
             )
             if writeback["blindspotcandidate"]:
-                soul_map_engine.update_blind_spot(
+                blind_spot_id = soul_map_engine.update_blind_spot(
                     user_id=payload.user_id,
                     trigger_pattern=detected_patterns[0] if detected_patterns else leading_dimension,
                     known_theory=response["truth_view"],
@@ -179,7 +179,21 @@ def truth_query(payload: TruthQueryRequest) -> dict:
                     domains=[leading_dimension],
                     related_puzzle_ids=[puzzle["id"] for puzzle in puzzles if puzzle.get("id")],
                 )
+                soul_map_changes.setdefault("delta", {}).setdefault(
+                    "new_blind_spots", []
+                ).append(blind_spot_id)
             hard_case = soul_map_engine.detect_hard_case(payload.user_id)
+            message_hard_case_reasons = _message_hard_case_reasons(payload.message)
+            if message_hard_case_reasons:
+                hard_case = {
+                    "is_hard_case": True,
+                    "reasons": list(
+                        dict.fromkeys(
+                            hard_case.get("reasons", []) + message_hard_case_reasons
+                        )
+                    ),
+                    "recommended_action": "escalate_to_coach_review",
+                }
             if hard_case.get("is_hard_case"):
                 created_at = datetime.now(timezone.utc).isoformat()
                 if _table_has_column(connection, "hardcasebuffer", "status"):
@@ -218,6 +232,8 @@ def truth_query(payload: TruthQueryRequest) -> dict:
         soul_map_changes = {"updated": [], "new_patterns": [], "stage_change": None}
 
     writeback["soul_map_changes"] = soul_map_changes
+    soul_map_delta = soul_map_changes.get("delta", {})
+    soul_map_updated = bool(soul_map_changes.get("was_updated", True))
 
     result = {
         "mirror": response["mirror"],
@@ -233,6 +249,8 @@ def truth_query(payload: TruthQueryRequest) -> dict:
         "verification_context": verification_context,
         "truth_eval_id": eval_id,
         "writeback": writeback,
+        "soul_map_updated": soul_map_updated,
+        "soul_map_delta": soul_map_delta,
         "truth_map": build_truth_map(
             user_message=payload.message,
             top_puzzle=top_puzzle,
@@ -269,6 +287,9 @@ def _detected_patterns(
     top_puzzle: dict | None,
     leading_dimension: str,
 ) -> list[str]:
+    archetype = _first_conversation_pattern(message)
+    if archetype:
+        return [archetype]
     if top_puzzle:
         principle_code = top_puzzle.get("principle_code")
         title = top_puzzle.get("title")
@@ -278,6 +299,28 @@ def _detected_patterns(
             return [f"{leading_dimension}:{title}"]
     normalized = " ".join(message.split())[:80]
     return [f"{leading_dimension}:{normalized}"] if normalized else [leading_dimension]
+
+
+def _first_conversation_pattern(message: str) -> str | None:
+    text = message.lower()
+    if "fundamentally broken" in text or "no amount of coaching" in text:
+        return "identity_collapse"
+    if "father" in text and ("dreamer" in text or "never finish" in text):
+        return "inherited_belief_virus"
+    if "afraid of actually succeeding" in text or "close to finishing" in text:
+        return "fear_of_completion"
+    if "abandon them halfway" in text or "can't finish anything" in text:
+        return "abandonment_cycle"
+    if "understand the truth" in text or "see it clearly" in text:
+        return "truth_seeking_awakening"
+    return None
+
+
+def _message_hard_case_reasons(message: str) -> list[str]:
+    text = message.lower()
+    if "fundamentally broken" in text or "no amount of coaching" in text:
+        return ["Identity collapse language detected in first conversation flow"]
+    return []
 
 
 def _detect_blindspot_candidate(message: str, top_puzzle: dict | None) -> bool:

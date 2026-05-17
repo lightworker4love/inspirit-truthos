@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class TruthQueryRequest(BaseModel):
@@ -12,3 +14,11 @@ class TruthQueryRequest(BaseModel):
     mode: str = Field(default="mentor")
     depth: str = Field(default="standard")
     language: str = Field(default="en")
+
+    @model_validator(mode="before")
+    @classmethod
+    def accept_query_as_message(cls, values: Any) -> Any:
+        if isinstance(values, dict) and "message" not in values and "query" in values:
+            values = dict(values)
+            values["message"] = values["query"]
+        return values
