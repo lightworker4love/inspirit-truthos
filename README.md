@@ -20,6 +20,19 @@ docker compose up
 ## Service URL
 - API: `http://localhost:18000`
 
+## Production Status
+
+| Service | URL | Health |
+| --- | --- | --- |
+| Truth API | https://truth-api-production-0046.up.railway.app | `/health` |
+| Hermes Agent | https://hermes-agent-production-848a.up.railway.app | `/health` |
+
+**Deployment**: Railway (Dockerfile-based, monorepo)
+
+**CI/CD**: GitHub Actions -> Railway CLI auto-deploy on push to master
+
+**Last verified**: 2026-05-18
+
 ## Seed import
 ```bash
 python scripts/seed_import.py
