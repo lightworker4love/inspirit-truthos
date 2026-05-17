@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
 from api.designer import router as designer_router
+from api.sessions import router as sessions_router
 from api.soul_map import router as soul_map_router
 from app.dimension_classifier import classify_dimensions
 from app.db import connect_db
@@ -31,6 +32,7 @@ STATIC_DIR = Path(__file__).resolve().parents[1] / "static"
 os.makedirs(STATIC_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.include_router(designer_router)
+app.include_router(sessions_router)
 app.include_router(soul_map_router)
 
 
@@ -48,6 +50,11 @@ def healthz() -> dict[str, str | bool]:
         "vector_index": vector_index_exists(),
         "embedding_mode": get_embedding_mode(),
     }
+
+
+@app.get("/health")
+def health() -> dict[str, str | bool]:
+    return healthz()
 
 
 @app.post("/api/truth/query")
