@@ -90,6 +90,20 @@ jobs:
           docker compose logs truth-api --tail=120
           exit 1
 
+      - name: Wait for Hermes Agent
+        run: |
+          for i in $(seq 1 40); do
+            if curl -fsS http://localhost:8001/health >/tmp/hermes-health.json; then
+              cat /tmp/hermes-health.json
+              exit 0
+            fi
+            docker compose logs hermes-agent --tail=50
+            sleep 3
+          done
+          docker compose ps
+          docker compose logs hermes-agent --tail=120
+          exit 1
+
       - name: Validate live truth query response
         run: |
           RESPONSE=$(curl -fsS -X POST http://localhost:18000/api/truth/query \
@@ -163,6 +177,52 @@ jobs:
           print('TruthOS bridge reachability: PASS')
           PY
 
+      - name: Validate Hermes chat integration
+        run: |
+          CHAT=$(curl -fsS -X POST http://localhost:8001/chat \
+            -H "Content-Type: application/json" \
+            -d '{
+              "user_id": "ci-hermes",
+              "session_id": "sess-hermes-010",
+              "message": "I know the truth, but I still avoid the conversation."
+            }')
+          echo "$CHAT" | python3 -m json.tool
+          CHAT="$CHAT" python3 - <<'PY'
+          import json, os
+          r = json.loads(os.environ["CHAT"])
+          assert r["session_id"] == "sess-hermes-010"
+          assert "response" in r
+          assert "truth_layer" in r
+          print("Hermes chat: PASS")
+          PY
+
+      - name: Verify Live Monitor APIs
+        run: |
+          STATS=$(curl -fsS http://localhost:18000/api/sessions/stats/summary)
+          echo "$STATS" | python3 -m json.tool
+          STATS="$STATS" python3 - <<'PY'
+          import json, os
+          r = json.loads(os.environ["STATS"])
+          assert "sessions_last_1h" in r
+          assert "queries_last_1h" in r
+          assert "avg_truth_score_1h" in r
+          assert "hard_cases_pending" in r
+          print("Live Monitor stats: PASS")
+          PY
+          curl -sf "http://localhost:18000/api/sessions/recent?minutes=10&limit=50" | python3 -c "
+          import json, sys
+          r = json.load(sys.stdin)
+          assert 'sessions' in r
+          print('Recent sessions: PASS')
+          "
+          curl -sf "http://localhost:18000/api/sessions/sess-hermes-010/truth-scores" | python3 -c "
+          import json, sys
+          r = json.load(sys.stdin)
+          assert r['session_id'] == 'sess-hermes-010'
+          assert 'evaluations' in r
+          print('Session truth scores: PASS')
+          "
+
       - name: Validate DesignerAgent endpoint
         run: |
           docker compose exec -T truth-api python - <<'PY'
@@ -225,6 +285,7 @@ jobs:
         run: |
           docker compose ps
           docker compose logs truth-api --tail=100
+          docker compose logs hermes-agent --tail=100
 
       - name: Stop stack
         if: always()
