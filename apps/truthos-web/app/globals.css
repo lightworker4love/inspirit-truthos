@@ -1,0 +1,98 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-text);
+  --color-surface: var(--color-surface);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-text);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-text);
+  --color-primary: var(--color-primary);
+  --color-primary-foreground: var(--color-primary-foreground);
+  --color-secondary: var(--color-secondary);
+  --color-secondary-foreground: var(--color-text);
+  --color-muted: var(--color-muted);
+  --color-muted-foreground: var(--color-text-muted);
+  --color-accent: var(--color-accent);
+  --color-accent-foreground: var(--color-text);
+  --color-border: var(--color-border);
+  --color-input: var(--color-border);
+  --color-ring: var(--color-primary);
+  --color-destructive: var(--color-destructive);
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-lora);
+  --radius-sm: 0.35rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+:root {
+  --color-bg: #f5f0e8;
+  --color-surface: #fffaf2;
+  --color-text: #211f1c;
+  --color-text-muted: #6f665c;
+  --color-primary: #01696f;
+  --color-primary-foreground: #f7fbf9;
+  --color-secondary: #ebe4d8;
+  --color-muted: #ece5da;
+  --color-accent: #e2f0ee;
+  --color-border: rgb(33 31 28 / 12%);
+  --color-destructive: #9f3a32;
+  --background: var(--color-bg);
+  --foreground: var(--color-text);
+  --card: var(--color-surface);
+  --card-foreground: var(--color-text);
+  --popover: var(--color-surface);
+  --popover-foreground: var(--color-text);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-foreground);
+  --secondary: var(--color-secondary);
+  --secondary-foreground: var(--color-text);
+  --muted: var(--color-muted);
+  --muted-foreground: var(--color-text-muted);
+  --accent: var(--color-accent);
+  --accent-foreground: var(--color-text);
+  --border: var(--color-border);
+  --input: var(--color-border);
+  --ring: var(--color-primary);
+  --destructive: var(--color-destructive);
+  --radius: 0.75rem;
+}
+
+.dark {
+  --color-bg: #161512;
+  --color-surface: #211f1a;
+  --color-text: #f4efe7;
+  --color-text-muted: #b9afa2;
+  --color-primary: #3d9aa6;
+  --color-primary-foreground: #071617;
+  --color-secondary: #2d2a24;
+  --color-muted: #2b2822;
+  --color-accent: #243b3d;
+  --color-border: rgb(244 239 231 / 13%);
+  --color-destructive: #df756b;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/40;
+  }
+
+  html {
+    @apply h-full scroll-smooth;
+  }
+
+  body {
+    @apply min-h-full bg-background text-foreground;
+  }
+
+  ::selection {
+    @apply bg-primary/20 text-foreground;
+  }
+}

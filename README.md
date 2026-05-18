@@ -20,6 +20,28 @@ docker compose up
 ## Service URL
 - API: `http://localhost:18000`
 
+## Frontend (apps/truthos-web)
+
+`apps/truthos-web` is the TruthOS v1 frontend for guided reflection, Hermes chat,
+and Soul Map viewing. It is a Next.js App Router app with TypeScript, Tailwind
+CSS, and shadcn/ui base components.
+
+Local frontend development intentionally connects to Railway production backends:
+
+```bash
+NEXT_PUBLIC_HERMES_AGENT_URL=https://hermes-agent-production-848a.up.railway.app
+NEXT_PUBLIC_TRUTH_API_URL=https://truth-api-production-0046.up.railway.app
+```
+
+Run locally:
+
+```bash
+cd apps/truthos-web
+cp .env.local.example .env.local
+npm install
+npm run dev
+```
+
 ## Production Status
 
 | Service | URL | Health |
