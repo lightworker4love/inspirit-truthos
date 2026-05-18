@@ -51,3 +51,14 @@ jobs:
             --service hermes-agent \
             --detach \
             --message "GitHub Actions deploy hermes-agent ${GITHUB_SHA}"
+
+      - name: Deploy truthos-web
+        env:
+          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway up \
+            --project "$RAILWAY_PROJECT_ID" \
+            --environment "$RAILWAY_ENVIRONMENT" \
+            --service truthos-web \
+            --detach \
+            --message "GitHub Actions deploy truthos-web ${GITHUB_SHA}"

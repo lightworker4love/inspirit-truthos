@@ -41,6 +41,12 @@ Deploy the Hermes Agent service:
 railway up --service hermes-agent
 ```
 
+Deploy the TruthOS Web frontend:
+
+```bash
+railway up --service truthos-web
+```
+
 ## Auto Deploy
 
 After the `RAILWAY_TOKEN` GitHub Actions secret is configured, every push to
@@ -58,6 +64,7 @@ Production smoke check:
 ```bash
 curl -s -w "\nHTTP %{http_code}" https://truth-api-production-0046.up.railway.app/health
 curl -s -w "\nHTTP %{http_code}" https://hermes-agent-production-848a.up.railway.app/health
+curl -s -w "\nHTTP %{http_code}" https://truthos-web-production.up.railway.app
 curl -s -w "\nHTTP %{http_code}" -X POST https://hermes-agent-production-848a.up.railway.app/chat \
   -H "Content-Type: application/json" \
   -d '{"user_id": "smoke-user-001", "message": "smoke test ping"}'
@@ -81,6 +88,12 @@ Hermes Agent logs:
 
 ```bash
 railway logs --service hermes-agent
+```
+
+TruthOS Web logs:
+
+```bash
+railway logs --service truthos-web
 ```
 
 ## GitHub Actions Status
@@ -119,6 +132,15 @@ Current Railway services:
 | --- | --- |
 | `truth-api` | `TRUTHOS_ENV`, `TRUTHOS_DB_PATH` |
 | `hermes-agent` | `TRUTHOS_BASE_URL` |
+| `truthos-web` | `NEXT_PUBLIC_HERMES_AGENT_URL`, `NEXT_PUBLIC_TRUTH_API_URL` |
+
+Current Railway URLs:
+
+| Service | URL |
+| --- | --- |
+| `truth-api` | `https://truth-api-production-0046.up.railway.app` |
+| `hermes-agent` | `https://hermes-agent-production-848a.up.railway.app` |
+| `truthos-web` | `https://truthos-web-production.up.railway.app` |
 
 GitHub Actions requires:
 
