@@ -53,6 +53,22 @@ git push origin master
 The workflow runs the existing CI suite first. Railway deploy starts only after
 the tests and container checks pass.
 
+Production smoke check:
+
+```bash
+curl -s -w "\nHTTP %{http_code}" https://truth-api-production-0046.up.railway.app/health
+curl -s -w "\nHTTP %{http_code}" https://hermes-agent-production-848a.up.railway.app/health
+curl -s -w "\nHTTP %{http_code}" -X POST https://hermes-agent-production-848a.up.railway.app/chat \
+  -H "Content-Type: application/json" \
+  -d '{"user_id": "smoke-user-001", "message": "smoke test ping"}'
+```
+
+## Auto-Deploy Verification Log
+
+| Date | Trigger | Workflow Run | CI | CD | Smoke Tests |
+| --- | --- | --- | --- | --- | --- |
+| 2026-05-18 | git push master (commit 4e9a3d8) | 25998301986 | ✓ | ✓ | /health ✓ /chat ✓ Soul Map write ✓ |
+
 ## Railway Logs
 
 Truth API logs:
@@ -109,3 +125,15 @@ GitHub Actions requires:
 | Secret | Purpose |
 | --- | --- |
 | `RAILWAY_TOKEN` | Railway account token from Account Settings -> Tokens. The workflow maps this secret to `RAILWAY_API_TOKEN` for Railway CLI authentication. |
+
+## Known Issues / Lessons Learned
+
+- 2026-05-18: Railway CLI env var is `RAILWAY_API_TOKEN` (not `RAILWAY_TOKEN`). Run 25998090297 failed for this reason and was intentionally abandoned.
+
+- 2026-05-18: `hermes-agent` `POST /chat` requires `user_id` as a required field. Smoke test payload must include `{"user_id": "...", "message": "..."}`. Minimal valid smoke test command:
+
+```bash
+curl -s -X POST https://hermes-agent-production-848a.up.railway.app/chat \
+  -H "Content-Type: application/json" \
+  -d '{"user_id": "smoke-user-001", "message": "smoke test ping"}'
+```
