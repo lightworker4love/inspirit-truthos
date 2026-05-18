@@ -56,6 +56,24 @@ export type SoulMapResponse = {
   updated_at?: string;
 };
 
+export type ServiceHealth = {
+  ok: boolean;
+  responseTimeMs: number;
+  attempts: number;
+};
+
+export type HealthStatus = "healthy" | "warming" | "partial" | "offline";
+
+export type HealthCheckResponse = {
+  truthApi: boolean;
+  hermesAgent: boolean;
+  status: HealthStatus;
+  services: {
+    truthApi: ServiceHealth;
+    hermesAgent: ServiceHealth;
+  };
+};
+
 export class ApiError extends Error {
   status: number;
   details?: unknown;
@@ -76,6 +94,30 @@ const truthApiBaseUrl =
   process.env.NEXT_PUBLIC_TRUTH_API_URL ||
   "https://truth-api-production-0046.up.railway.app";
 
+const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+function isAbortError(error: unknown) {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit = {},
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
 async function readJson<T>(response: Response): Promise<T> {
   const text = await response.text();
   if (!text) {
@@ -89,17 +131,24 @@ async function readJson<T>(response: Response): Promise<T> {
   }
 }
 
-async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
+async function requestJson<T>(
+  url: string,
+  init?: RequestInit,
+  timeoutMs = 15_000,
+): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(url, {
+    response = await fetchWithTimeout(url, {
       ...init,
       headers: {
         "Content-Type": "application/json",
         ...(init?.headers || {}),
       },
-    });
+    }, timeoutMs);
   } catch (error) {
+    if (isAbortError(error)) {
+      throw new ApiError("Hermes 暫時無法回應，請稍候再試", 0, error);
+    }
     throw new ApiError("網路連線失敗，請稍候再試", 0, error);
   }
 
@@ -137,28 +186,78 @@ export async function sendChat(
       user_id: userId,
       message,
     }),
-  });
+  }, 30_000);
 }
 
 export async function getSoulMap(userId: string): Promise<SoulMapResponse> {
   return requestJson<SoulMapResponse>(
     `${truthApiBaseUrl}/api/soul-map/${encodeURIComponent(userId)}`,
     { method: "GET" },
+    20_000,
   );
 }
 
-export async function checkHealth(): Promise<{
-  truthApi: boolean;
-  hermesAgent: boolean;
-}> {
-  const [truthApi, hermesAgent] = await Promise.allSettled([
-    fetch(`${truthApiBaseUrl}/health`, { cache: "no-store" }),
-    fetch(`${hermesBaseUrl}/health`, { cache: "no-store" }),
+async function checkServiceHealth(url: string): Promise<ServiceHealth> {
+  async function attempt(attemptNumber: number): Promise<ServiceHealth> {
+    const startedAt = performance.now();
+    try {
+      const response = await fetchWithTimeout(
+        url,
+        { cache: "no-store" },
+        15_000,
+      );
+
+      return {
+        ok: response.ok,
+        responseTimeMs: performance.now() - startedAt,
+        attempts: attemptNumber,
+      };
+    } catch {
+      return {
+        ok: false,
+        responseTimeMs: performance.now() - startedAt,
+        attempts: attemptNumber,
+      };
+    }
+  }
+
+  const first = await attempt(1);
+  if (first.ok) {
+    return first;
+  }
+
+  await sleep(3_000);
+  const second = await attempt(2);
+  return second;
+}
+
+export async function checkHealth(): Promise<HealthCheckResponse> {
+  const [truthApi, hermesAgent] = await Promise.all([
+    checkServiceHealth(`${truthApiBaseUrl}/health`),
+    checkServiceHealth(`${hermesBaseUrl}/health`),
   ]);
 
+  const services = { truthApi, hermesAgent };
+  const okCount = Number(truthApi.ok) + Number(hermesAgent.ok);
+  const coldStartDetected =
+    Object.values(services).some(
+      (service) => service.ok && (service.responseTimeMs > 5_000 || service.attempts > 1),
+    );
+
+  let status: HealthStatus;
+  if (okCount === 2) {
+    status = coldStartDetected ? "warming" : "healthy";
+  } else if (okCount === 1) {
+    status = "partial";
+  } else {
+    status = "offline";
+  }
+
   return {
-    truthApi: truthApi.status === "fulfilled" && truthApi.value.ok,
-    hermesAgent: hermesAgent.status === "fulfilled" && hermesAgent.value.ok,
+    truthApi: truthApi.ok,
+    hermesAgent: hermesAgent.ok,
+    status,
+    services,
   };
 }
 

@@ -39,6 +39,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [waitingLong, setWaitingLong] = useState(false);
   const [error, setError] = useState("");
   const [mapUpdated, setMapUpdated] = useState(false);
 
@@ -59,7 +60,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
-  }, [messages, sending]);
+  }, [messages, sending, waitingLong]);
 
   const count = useMemo(() => draft.length, [draft]);
 
@@ -81,6 +82,11 @@ export default function ChatPage() {
     setError("");
     setMapUpdated(false);
     setSending(true);
+    setWaitingLong(false);
+
+    const warmupTimer = window.setTimeout(() => {
+      setWaitingLong(true);
+    }, 5_000);
 
     try {
       const response = await sendChat(userId, message);
@@ -101,7 +107,9 @@ export default function ChatPage() {
         setError("Hermes 暫時無法回應，請稍候再試");
       }
     } finally {
+      window.clearTimeout(warmupTimer);
       setSending(false);
+      setWaitingLong(false);
     }
   }
 
@@ -187,7 +195,17 @@ export default function ChatPage() {
                 </div>
               </article>
             ))}
-            {sending ? <TypingIndicator /> : null}
+            {sending ? (
+              waitingLong ? (
+                <article className="flex justify-start">
+                  <div className="max-w-[82%] rounded-2xl bg-surface px-5 py-4 text-muted-foreground shadow-sm">
+                    Hermes 正在喚醒中，請稍候...
+                  </div>
+                </article>
+              ) : (
+                <TypingIndicator />
+              )
+            ) : null}
             <div ref={bottomRef} />
           </div>
         )}

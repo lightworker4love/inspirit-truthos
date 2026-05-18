@@ -70,6 +70,30 @@ curl -s -w "\nHTTP %{http_code}" -X POST https://hermes-agent-production-848a.up
   -d '{"user_id": "smoke-user-001", "message": "smoke test ping"}'
 ```
 
+## Keep-Alive Strategy
+
+The Railway service manifests set `sleepApplication: false` for production.
+Keep the lightweight ping script available as an external fallback if a service
+still shows cold-start latency after idle periods.
+
+Manual run:
+
+```bash
+./scripts/keepalive.sh
+```
+
+Optional cron schedule:
+
+```bash
+crontab -e
+```
+
+Add:
+
+```cron
+*/10 * * * * /Users/imlightworker/Documents/Codex/inspirit-truthos/scripts/keepalive.sh >> ~/truthos-keepalive.log 2>&1
+```
+
 ## Auto-Deploy Verification Log
 
 | Date | Trigger | Workflow Run | CI | CD | Smoke Tests |
@@ -159,3 +183,7 @@ curl -s -X POST https://hermes-agent-production-848a.up.railway.app/chat \
   -H "Content-Type: application/json" \
   -d '{"user_id": "smoke-user-001", "message": "smoke test ping"}'
 ```
+
+- 2026-05-19: Railway cold starts can make the first health or chat request
+  feel degraded. The frontend now waits longer, shows a warm-up state, and
+  production Railway manifests explicitly keep applications awake.

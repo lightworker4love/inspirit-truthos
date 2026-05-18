@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { History, Home, Map, MessageCircle } from "lucide-react";
 
-import { checkHealth } from "@/lib/api";
+import { checkHealth, type HealthStatus } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -47,15 +47,21 @@ function TruthLogo() {
 }
 
 function HealthIndicator() {
-  const [healthy, setHealthy] = useState<boolean | null>(null);
+  const [status, setStatus] = useState<HealthStatus | "checking">("checking");
 
   useEffect(() => {
     let mounted = true;
 
     async function refresh() {
-      const result = await checkHealth();
-      if (mounted) {
-        setHealthy(result.truthApi && result.hermesAgent);
+      try {
+        const result = await checkHealth();
+        if (mounted) {
+          setStatus(result.status);
+        }
+      } catch {
+        if (mounted) {
+          setStatus("offline");
+        }
       }
     }
 
@@ -67,17 +73,24 @@ function HealthIndicator() {
     };
   }, []);
 
-  const label =
-    healthy === null ? "正在確認服務" : healthy ? "後端連線正常" : "後端部分降級";
+  const label = {
+    checking: "正在確認服務",
+    healthy: "服務正常",
+    warming: "服務喚醒中...",
+    partial: "後端部分降級",
+    offline: "服務暫時離線",
+  }[status];
 
   return (
     <div className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-2 text-sm text-muted-foreground">
       <span
         className={cn(
           "size-2 rounded-full",
-          healthy === null && "bg-muted-foreground",
-          healthy === true && "bg-emerald-500",
-          healthy === false && "bg-amber-500",
+          status === "checking" && "bg-muted-foreground",
+          status === "healthy" && "bg-emerald-500",
+          status === "warming" && "bg-sky-500",
+          status === "partial" && "bg-amber-500",
+          status === "offline" && "bg-red-500",
         )}
       />
       {label}

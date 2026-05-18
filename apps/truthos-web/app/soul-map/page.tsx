@@ -59,12 +59,17 @@ function getPrimaryPattern(map: SoulMapResponse) {
   })[0];
 }
 
-function LoadingState() {
+function LoadingState({ warming }: { warming: boolean }) {
   return (
     <section className="mx-auto max-w-5xl px-6 py-10">
       <div className="mb-8 space-y-3">
         <Skeleton className="h-8 w-52" />
         <Skeleton className="h-5 w-96 max-w-full" />
+        {warming ? (
+          <p className="text-sm text-muted-foreground">
+            靈魂藍圖載入中，正在連線...
+          </p>
+        ) : null}
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {[0, 1, 2, 3].map((item) => (
@@ -121,9 +126,12 @@ function InsightCard({
 export default function SoulMapPage() {
   const [map, setMap] = useState<SoulMapResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [warming, setWarming] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    let warmupTimer: number | undefined;
+
     queueMicrotask(() => {
       const userId = sessionStorage.getItem("truthos_user_id");
       if (!userId) {
@@ -131,6 +139,10 @@ export default function SoulMapPage() {
         setError("請先回到首頁，告訴 Hermes 該如何稱呼你。");
         return;
       }
+
+      warmupTimer = window.setTimeout(() => {
+        setWarming(true);
+      }, 5_000);
 
       getSoulMap(userId)
         .then(setMap)
@@ -144,8 +156,20 @@ export default function SoulMapPage() {
             setError("靈魂藍圖暫時無法載入，請稍候再試。");
           }
         })
-        .finally(() => setLoading(false));
+        .finally(() => {
+          if (warmupTimer) {
+            window.clearTimeout(warmupTimer);
+          }
+          setLoading(false);
+          setWarming(false);
+        });
     });
+
+    return () => {
+      if (warmupTimer) {
+        window.clearTimeout(warmupTimer);
+      }
+    };
   }, []);
 
   const primaryPattern = useMemo(() => (map ? getPrimaryPattern(map) : undefined), [map]);
@@ -156,7 +180,7 @@ export default function SoulMapPage() {
   const frequencyDots = Math.min(Math.max(frequency, 0), 8);
 
   if (loading) {
-    return <LoadingState />;
+    return <LoadingState warming={warming} />;
   }
 
   if (error) {
