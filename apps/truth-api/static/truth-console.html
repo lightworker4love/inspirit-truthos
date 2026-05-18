@@ -12,6 +12,15 @@
       <div><h1 class="text-2xl font-semibold">TruthOS Console</h1><p class="text-sm text-zinc-400">Coach Review UI and live TruthOS monitor</p></div>
       <button id="theme" class="w-fit rounded border border-zinc-700 px-3 py-2 text-sm">Light mode</button>
     </header>
+    <section class="mt-4 rounded border border-amber-500 bg-amber-950 px-4 py-3 text-sm text-amber-100">
+      <strong>Dev mode backend:</strong>
+      v1 frontend development uses Railway production services.
+      Hermes Agent: <span class="font-mono">https://hermes-agent-production-848a.up.railway.app</span>
+      <span class="mx-1">|</span>
+      Truth API: <span class="font-mono">https://truth-api-production-0046.up.railway.app</span>
+      <span class="mx-1">|</span>
+      Local Hermes <span class="font-mono">127.0.0.1:8642</span> is not used for chat.
+    </section>
     <nav id="tabs" class="mt-4 grid grid-cols-2 gap-2 md:grid-cols-6"></nav>
     <section class="mt-4 flex flex-col gap-3 border-b border-zinc-800 pb-4 md:flex-row md:items-end">
       <label class="flex-1"><span class="block text-sm text-zinc-400">User ID</span><input id="user" class="mt-1 w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2" value="test-sprint006" /></label>
