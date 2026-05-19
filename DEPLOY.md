@@ -94,6 +94,18 @@ Add:
 */10 * * * * /Users/imlightworker/Documents/Codex/inspirit-truthos/scripts/keepalive.sh >> ~/truthos-keepalive.log 2>&1
 ```
 
+## Production Readiness Checklist
+
+✅ Three Railway services live and healthy
+✅ sleepApplication: false on all services
+✅ GitHub Actions CI/CD pipeline verified
+✅ Frontend timeout and warm-up UX configured
+✅ keepalive script available at scripts/keepalive.sh
+✅ npm audit findings resolved
+⬜ Custom domain configured (future)
+⬜ Railway paid plan for guaranteed uptime (future)
+⬜ Session history persistence (future sprint)
+
 ## Auto-Deploy Verification Log
 
 | Date | Trigger | Workflow Run | CI | CD | Smoke Tests |

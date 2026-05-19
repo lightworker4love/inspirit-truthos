@@ -15,15 +15,16 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError, getSoulMap, SoulMapResponse } from "@/lib/api";
+import { parsePattern } from "@/lib/patterns";
 
 function formatDate(value?: string | null) {
   if (!value) {
-    return "尚未更新";
+    return "剛剛建立";
   }
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return "尚未更新";
+    return "剛剛建立";
   }
 
   return new Intl.DateTimeFormat("zh-TW", {
@@ -31,18 +32,6 @@ function formatDate(value?: string | null) {
     month: "long",
     day: "numeric",
   }).format(date);
-}
-
-function patternLabel(pattern?: string) {
-  if (!pattern) {
-    return "尚未浮現";
-  }
-
-  const known: Record<string, string> = {
-    "motive:MOT_001": "討好驅動的行動模式",
-  };
-
-  return known[pattern] || pattern;
 }
 
 function getPrimaryPattern(map: SoulMapResponse) {
@@ -174,10 +163,12 @@ export default function SoulMapPage() {
 
   const primaryPattern = useMemo(() => (map ? getPrimaryPattern(map) : undefined), [map]);
   const primaryPatternId = primaryPattern?.id;
+  const parsedPattern = primaryPatternId ? parsePattern(primaryPatternId) : undefined;
   const frequency = primaryPatternId
     ? map?.pattern_weights?.[primaryPatternId]?.frequency || 0
     : 0;
   const frequencyDots = Math.min(Math.max(frequency, 0), 8);
+  const status = map?.status || "active";
 
   if (loading) {
     return <LoadingState warming={warming} />;
@@ -221,22 +212,35 @@ export default function SoulMapPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <InsightCard label="當前狀態">
           <Badge className="h-7 rounded-full bg-emerald-700 px-3 text-sm text-white">
-            {map.status}
+            {status}
           </Badge>
         </InsightCard>
 
         <InsightCard label="核心模式">
-          <CardTitle className="text-2xl">{patternLabel(primaryPatternId)}</CardTitle>
-          {primaryPatternId && patternLabel(primaryPatternId) === primaryPatternId ? (
-            <p className="mt-3 w-fit rounded bg-muted px-2 py-1 font-mono text-sm text-muted-foreground">
-              {primaryPatternId}
-            </p>
-          ) : null}
+          {parsedPattern ? (
+            <div className="space-y-3">
+              <CardTitle className="text-2xl">{parsedPattern.label}</CardTitle>
+              <p className="text-base leading-7 text-muted-foreground">
+                {parsedPattern.description}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <CardTitle className="text-2xl text-muted-foreground">
+                模式尚未確立
+              </CardTitle>
+              <p className="text-base leading-7 text-muted-foreground">
+                再多一點真實對話後，這裡會慢慢浮現更清楚的生命模式。
+              </p>
+            </div>
+          )}
         </InsightCard>
 
         <InsightCard label="出現頻率">
           <div className="space-y-4">
-            <p className="text-2xl font-medium">{frequency} 次對話</p>
+            <p className="text-2xl font-medium">
+              {frequency > 0 ? `${frequency} 次對話` : "首次記錄"}
+            </p>
             <div className="flex gap-2">
               {Array.from({ length: 8 }).map((_, index) => (
                 <span

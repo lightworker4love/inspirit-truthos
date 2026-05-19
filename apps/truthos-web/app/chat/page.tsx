@@ -19,10 +19,13 @@ type Message = {
 };
 
 const suggestions = [
-  "我現在面對的最大挑戰是...",
-  "我想更了解我的生命模式...",
-  "我感覺自己在原地打轉...",
+  "我現在最想突破的，是...",
+  "我在某段關係中感到困惑，因為...",
+  "我想更了解，為什麼我總是...",
 ];
+
+const welcomeText =
+  "你好。我是 Hermes，你的生命藍圖引導者。\n這裡是一個私密的空間，你說的每一句話都只為了你自己。\n慢慢說，從現在最真實的一句話開始。";
 
 function formatTime(date: Date) {
   return new Intl.DateTimeFormat("zh-TW", {
@@ -54,6 +57,18 @@ export default function ChatPage() {
       setUserId(storedUserId);
       const params = new URLSearchParams(window.location.search);
       setDraft(params.get("prompt") || "");
+      setMessages((current) =>
+        current.length > 0
+          ? current
+          : [
+              {
+                id: "hermes-welcome",
+                role: "hermes",
+                text: welcomeText,
+                createdAt: new Date(),
+              },
+            ],
+      );
       setLoading(false);
     });
   }, [router]);
@@ -63,6 +78,7 @@ export default function ChatPage() {
   }, [messages, sending, waitingLong]);
 
   const count = useMemo(() => draft.length, [draft]);
+  const firstSession = messages.length === 1 && messages[0]?.id === "hermes-welcome";
 
   async function submit(text: string) {
     const message = text.trim();
@@ -131,34 +147,9 @@ export default function ChatPage() {
   return (
     <section className="mx-auto flex h-[calc(100vh-4.5rem)] max-w-4xl flex-col px-4 md:px-8">
       <div className="flex-1 overflow-y-auto py-8">
-        {messages.length === 0 ? (
-          <div className="flex min-h-full flex-col justify-center">
-            <div className="max-w-2xl space-y-6">
-              <p className="text-sm tracking-[0.16em] text-muted-foreground uppercase">
-                對話空間
-              </p>
-              <h1 className="font-serif text-4xl leading-tight md:text-5xl">
-                你可以從任何真實的感受開始。
-              </h1>
-              <p className="text-lg leading-8 text-muted-foreground">
-                不需要整理得很完整。Hermes 會跟著你的語氣，一步一步陪你看見正在重複出現的生命模式。
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {suggestions.map((suggestion) => (
-                  <button
-                    className="rounded-full border border-border bg-surface px-4 py-2 text-left text-sm text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
-                    key={suggestion}
-                    onClick={() => setDraft(suggestion)}
-                    type="button"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-5">
+        <div className={cn("space-y-5", firstSession && "flex min-h-full flex-col justify-center")}>
+          {messages.length > 0 ? (
+            <>
             {messages.map((message) => (
               <article
                 className={cn(
@@ -195,6 +186,31 @@ export default function ChatPage() {
                 </div>
               </article>
             ))}
+            {firstSession ? (
+              <div className="max-w-2xl space-y-6 pl-1">
+                <p className="text-sm tracking-[0.16em] text-muted-foreground uppercase">
+                  對話空間
+                </p>
+                <h1 className="font-serif text-4xl leading-tight md:text-5xl">
+                  你可以從任何真實的感受開始。
+                </h1>
+                <p className="text-lg leading-8 text-muted-foreground">
+                  不需要整理得很完整。Hermes 會跟著你的語氣，一步一步陪你看見正在重複出現的生命模式。
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  {suggestions.map((suggestion) => (
+                    <button
+                      className="rounded-full border border-border bg-surface px-5 py-3 text-left text-base leading-7 text-foreground transition-colors hover:border-primary hover:bg-primary/10"
+                      key={suggestion}
+                      onClick={() => setDraft(suggestion)}
+                      type="button"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             {sending ? (
               waitingLong ? (
                 <article className="flex justify-start">
@@ -207,14 +223,15 @@ export default function ChatPage() {
               )
             ) : null}
             <div ref={bottomRef} />
-          </div>
-        )}
+            </>
+          ) : null}
+        </div>
       </div>
 
       <div className="border-t border-border bg-background py-4">
         {mapUpdated ? (
           <div className="mb-3 rounded-lg border border-primary/25 bg-primary/10 px-4 py-2 text-sm text-primary">
-            ✦ 靈魂藍圖已更新
+            ✦ 你的生命藍圖剛剛記錄了這一刻
           </div>
         ) : null}
         {error ? (
