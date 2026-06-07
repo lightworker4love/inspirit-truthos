@@ -71,6 +71,8 @@ def test_query_returns_soul_map_delta(tmp_path, monkeypatch):
     assert body["soul_map_updated"] is True
     assert "soul_map_delta" in body
     assert "new_patterns" in body["soul_map_delta"]
+    assert "_internal" in body["writeback"]
+    assert "partial_failure" in body["writeback"]["_internal"]
 
 
 def test_get_or_create_soul_map_is_idempotent(tmp_path, monkeypatch):

@@ -36,10 +36,50 @@ RELATIONAL_CONTEXT = ["伴侶", "家人", "家庭", "朋友", "同事", "關係"
 CARE_CONTEXT = ["幫", "幫助", "照顧", "救", "支持", "接住"]
 
 
+class ClassificationResult(list[str]):
+    def __init__(
+        self,
+        values: list[str],
+        *,
+        confidence: float,
+        low_confidence: bool,
+        low_confidence_reason: str | None,
+    ) -> None:
+        super().__init__(values)
+        self.confidence = confidence
+        self.low_confidence = low_confidence
+        self.low_confidence_reason = low_confidence_reason
+
+
+def _build_classification_result(
+    values: list[str],
+    *,
+    raw_input: str,
+    top_score: float,
+) -> ClassificationResult:
+    stripped_input = raw_input.strip()
+    low_confidence = top_score < 0.35 or len(stripped_input) < 8
+    low_confidence_reason = None
+    if len(stripped_input) < 8:
+        low_confidence_reason = "input_too_short"
+    elif top_score < 0.35:
+        low_confidence_reason = "top_score_below_threshold"
+    return ClassificationResult(
+        values,
+        confidence=top_score,
+        low_confidence=low_confidence,
+        low_confidence_reason=low_confidence_reason,
+    )
+
+
 def classify_dimensions(message: str, top_k: int = 3) -> list[str]:
     text = message.strip().lower()
     if not text:
-        return DIMENSIONS[:top_k]
+        return _build_classification_result(
+            DIMENSIONS[:top_k],
+            raw_input=message,
+            top_score=0.0,
+        )
 
     scores: dict[str, float] = defaultdict(float)
     for dimension in DIMENSIONS:
@@ -63,4 +103,9 @@ def classify_dimensions(message: str, top_k: int = 3) -> list[str]:
         DIMENSIONS,
         key=lambda dimension: (-scores[dimension], DIMENSIONS.index(dimension)),
     )
-    return ranked[:top_k]
+    top_score = max(scores.values()) if scores else 0.0
+    return _build_classification_result(
+        ranked[:top_k],
+        raw_input=message,
+        top_score=top_score,
+    )

@@ -16,6 +16,43 @@ PUZZLE_COLUMNS = """
 """
 
 
+class RetrievalResult(list[dict]):
+    def __init__(
+        self,
+        values: list[dict],
+        *,
+        top_similarity: float,
+        is_fallback: bool,
+        fallback_reason: str | None,
+    ) -> None:
+        super().__init__(values)
+        self.top_similarity = top_similarity
+        self.is_fallback = is_fallback
+        self.fallback_reason = fallback_reason
+
+
+def _with_retrieval_metadata(
+    values: list[dict],
+    *,
+    top_similarity: float | None = None,
+    fallback_reason: str | None = None,
+) -> RetrievalResult:
+    raw_top_similarity = top_similarity
+    if raw_top_similarity is None:
+        top_score = values[0].get("score", 0.0) if values else 0.0
+        raw_top_similarity = float(top_score) if isinstance(top_score, int | float) else 0.0
+    is_fallback = raw_top_similarity < 0.60
+    reason = fallback_reason
+    if reason is None and is_fallback:
+        reason = "top_similarity_below_threshold"
+    return RetrievalResult(
+        values,
+        top_similarity=raw_top_similarity,
+        is_fallback=is_fallback,
+        fallback_reason=reason,
+    )
+
+
 def _row_to_puzzle(row) -> dict:
     return {
         "id": row["id"],
@@ -108,7 +145,11 @@ def _tokenize(text: str) -> list[str]:
     return [token for token in tokens if token]
 
 
-def _sqlite_keyword_search(query: str, dimensions: Sequence[str] | None = None, limit: int = 12) -> list[dict]:
+def _sqlite_keyword_search(
+    query: str,
+    dimensions: Sequence[str] | None = None,
+    limit: int = 12,
+) -> list[dict]:
     tokens = _tokenize(query)
     candidates = _fetch_sqlite_candidates(dimensions)
     dimension_rank = {dimension: len((dimensions or [])) - index for index, dimension in enumerate(dimensions or [])}
@@ -136,10 +177,19 @@ def _sqlite_keyword_search(query: str, dimensions: Sequence[str] | None = None, 
 
     if not scored:
         fallback_candidates = candidates or _fetch_sqlite_candidates(None)
-        return fallback_candidates[:limit]
+        return _with_retrieval_metadata(
+            fallback_candidates[:limit],
+            top_similarity=0.0,
+            fallback_reason="keyword_search_no_match",
+        )
 
     scored.sort(key=lambda item: (-item[0], item[1]["id"]))
-    return [item[1] for item in scored[:limit]]
+    prepared_results = [candidate for _, candidate in scored[:limit]]
+    top_similarity = float(scored[0][0]) if scored else 0.0
+    return _with_retrieval_metadata(
+        prepared_results,
+        top_similarity=top_similarity,
+    )
 
 
 def _vector_search(query: str, dimensions: Sequence[str] | None = None, limit: int = 12) -> list[dict]:
@@ -173,7 +223,7 @@ def retrieve_puzzles(query: str, dimensions: Sequence[str] | None = None, limit:
         try:
             results = _vector_search(query, dimensions=dimensions, limit=limit)
             if results:
-                return results
+                return _with_retrieval_metadata(results)
         except Exception:
             pass
 
@@ -181,7 +231,7 @@ def retrieve_puzzles(query: str, dimensions: Sequence[str] | None = None, limit:
         try:
             results = _vector_search(query, dimensions=dimensions, limit=limit)
             if results:
-                return results
+                return _with_retrieval_metadata(results)
         except Exception:
             pass
 

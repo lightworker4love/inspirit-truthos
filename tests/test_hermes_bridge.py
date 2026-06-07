@@ -83,6 +83,18 @@ def test_enrich_response_with_none_context():
     enriched = hook.enrich_response("Hermes response", None)
     assert enriched["response"] == "Hermes response"
     assert enriched["truth_layer"] is None
+    assert enriched["_truth_degraded"] is False
+
+
+def test_enrich_response_marks_truth_degraded_on_guardrail_context():
+    hook = TruthOSHook()
+    enriched = hook.enrich_response(
+        "Hermes response",
+        {"_truth_degraded": True, "_truth_degraded_reason": "timeout"},
+    )
+    assert enriched["response"] == "Hermes response"
+    assert enriched["truth_layer"] is None
+    assert enriched["_truth_degraded"] is True
 
 
 def test_enrich_response_includes_guidance_when_present():

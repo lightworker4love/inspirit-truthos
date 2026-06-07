@@ -1,0 +1,13 @@
+id,code,name_zh,name_en,description,order_index,created_at,updated_at
+dim_motive,motive,動機,Motive,Intent and hidden exchange.,1,2026-06-04T10:25:52.059328+00:00,2026-06-04T10:25:52.059328+00:00
+dim_cognition,cognition,認知,Cognition,Interpretation and mental framing.,2,2026-06-04T10:25:52.059328+00:00,2026-06-04T10:25:52.059328+00:00
+dim_emotion,emotion,情緒,Emotion,Emotional patterns and charge.,3,2026-06-04T10:25:52.059328+00:00,2026-06-04T10:25:52.059328+00:00
+dim_relationship,relationship,關係,Relationship,"Boundaries, roles, and attachment.",4,2026-06-04T10:25:52.059328+00:00,2026-06-04T10:25:52.059328+00:00
+dim_belief,belief,信念,Belief,Limiting beliefs and inner narratives.,5,2026-06-04T10:25:52.059328+00:00,2026-06-04T10:25:52.059328+00:00
+dim_evolution,evolution,進化,Evolution,Growth and repeated lessons.,6,2026-06-04T10:25:52.059328+00:00,2026-06-04T10:25:52.059328+00:00
+dim_causality,causality,因果,Causality,Action and consequence loops.,7,2026-06-04T10:25:52.059328+00:00,2026-06-04T10:25:52.059328+00:00
+dim_manifestation,manifestation,顯化,Manifestation,"Value, money, and exchange.",8,2026-06-04T10:25:52.059328+00:00,2026-06-04T10:25:52.059328+00:00
+dim_suffering,suffering,痛苦,Suffering,"Pain, collapse, and transformation.",9,2026-06-04T10:25:52.059328+00:00,2026-06-04T10:25:52.059328+00:00
+dim_freedom,freedom,自由,Freedom,Release and autonomy.,10,2026-06-04T10:25:52.059328+00:00,2026-06-04T10:25:52.059328+00:00
+dim_compassion,compassion,慈悲,Compassion,"Care, support, and warmth.",11,2026-06-04T10:25:52.059328+00:00,2026-06-04T10:25:52.059328+00:00
+dim_discernment,discernment,辨識,Discernment,"Truth, interpretation, and judgment.",12,2026-06-04T10:25:52.059328+00:00,2026-06-04T10:25:52.059328+00:00

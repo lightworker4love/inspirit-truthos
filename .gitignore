@@ -3,6 +3,7 @@
 __pycache__/
 *.pyc
 .venv/
+.venv.old/
 .venv311/
 data/*.db
 data/lancedb/

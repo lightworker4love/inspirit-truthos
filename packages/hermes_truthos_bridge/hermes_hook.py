@@ -7,7 +7,32 @@ from typing import Optional
 from .truthos_client import TruthOSClient
 
 
-logger = logging.getLogger("hermes.hook")
+try:
+    import structlog
+except ImportError:  # pragma: no cover - compatibility shim for local/dev envs
+    class _StructlogCompatLogger:
+        def __init__(self, name: str):
+            self._logger = logging.getLogger(name)
+
+        def warning(self, event: str, **kwargs) -> None:
+            self._logger.warning("%s | %s", event, kwargs)
+
+    class _StructlogCompat:
+        @staticmethod
+        def get_logger(name: str) -> _StructlogCompatLogger:
+            return _StructlogCompatLogger(name)
+
+    structlog = _StructlogCompat()
+
+
+logger = structlog.get_logger("hermes.hook")
+
+
+def _degraded_truth_context(reason: str) -> dict:
+    return {
+        "_truth_degraded": True,
+        "_truth_degraded_reason": reason,
+    }
 
 
 class TruthOSHook:
@@ -21,12 +46,34 @@ class TruthOSHook:
         message: str,
         context: Optional[dict] = None,
     ) -> Optional[dict]:
-        return await self.client.query(
-            user_message=message,
-            user_id=user_id,
-            session_id=session_id,
-            context=context,
-        )
+        try:
+            truth_context = await self.client.query(
+                user_message=message,
+                user_id=user_id,
+                session_id=session_id,
+                context=context,
+            )
+        except asyncio.TimeoutError as exc:
+            logger.warning("truth_layer_degraded", error=str(exc), session_id=session_id)
+            return _degraded_truth_context("timeout")
+        except Exception as exc:  # pragma: no cover - defensive guardrail
+            logger.warning("truth_layer_degraded", error=str(exc), session_id=session_id)
+            return _degraded_truth_context("error")
+
+        if truth_context is None:
+            logger.warning(
+                "truth_layer_degraded",
+                error="truth_context_unavailable",
+                session_id=session_id,
+            )
+            return _degraded_truth_context("truth_context_unavailable")
+
+        if isinstance(truth_context, dict):
+            enriched_context = dict(truth_context)
+            enriched_context.setdefault("_truth_degraded", False)
+            return enriched_context
+
+        return truth_context
 
     def fire_and_forget(
         self,
@@ -43,9 +90,17 @@ class TruthOSHook:
             "truth_layer": None,
             "soul_map_updated": False,
             "guidance_overlay": None,
+            "_truth_degraded": False,
         }
 
         if not truth_context:
+            return result
+
+        truth_degraded = bool(
+            isinstance(truth_context, dict) and truth_context.get("_truth_degraded")
+        )
+        result["_truth_degraded"] = truth_degraded
+        if truth_degraded and not truth_context.get("truth_map"):
             return result
 
         truth_map = truth_context.get("truth_map", {})

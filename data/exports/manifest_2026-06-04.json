@@ -1,0 +1,16 @@
+{
+  "exported_at": "2026-06-04T10:25:59.462412+00:00",
+  "db_path": "/app/data/truthos.db",
+  "tables": {
+    "truthpuzzles": 1200,
+    "belieflogs": 0,
+    "truthevals": 0,
+    "soulmaps": 0,
+    "blindspotarchives": 0,
+    "coreprinciples": 100,
+    "truthdimensions": 12
+  },
+  "puzzle_source": "SQLite table `truthpuzzles`",
+  "api_endpoint": "GET /api/truth/search?dimension=&tag=&limit=",
+  "phase": "Phase 1 (1200 seed puzzles)"
+}

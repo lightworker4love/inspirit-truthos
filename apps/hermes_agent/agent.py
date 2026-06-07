@@ -26,7 +26,13 @@ async def handle_message(
     try:
         truth_ctx = await asyncio.wait_for(asyncio.shield(truth_task), timeout=2.0)
     except asyncio.TimeoutError:
+        logger.warning(
+            "truth_layer_degraded | session_id=%s error=%s",
+            session_id,
+            "timeout",
+        )
         logger.info("TruthOS still processing; returning base response")
+        truth_ctx = {"_truth_degraded": True, "_truth_degraded_reason": "timeout"}
     return hook.enrich_response(hermes_response, truth_ctx)
 
 

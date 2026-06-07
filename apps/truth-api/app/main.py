@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import sqlite3
 from datetime import datetime, timezone
@@ -27,7 +28,25 @@ from app.truth_verification import TruthVerificationLayer
 from app.soul_map_engine import SoulMapEngine
 from app.vector_index import vector_index_exists
 
+try:
+    import structlog
+except ImportError:  # pragma: no cover - compatibility shim for local/dev envs
+    class _StructlogCompatLogger:
+        def __init__(self, name: str):
+            self._logger = logging.getLogger(name)
+
+        def warning(self, event: str, **kwargs) -> None:
+            self._logger.warning("%s | %s", event, kwargs)
+
+    class _StructlogCompat:
+        @staticmethod
+        def get_logger(name: str) -> _StructlogCompatLogger:
+            return _StructlogCompatLogger(name)
+
+    structlog = _StructlogCompat()
+
 app = FastAPI(title="TruthOS API", version="0.1.0")
+logger = structlog.get_logger("truth.api")
 STATIC_DIR = Path(__file__).resolve().parents[1] / "static"
 os.makedirs(STATIC_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -57,12 +76,53 @@ def health() -> dict[str, str | bool]:
     return healthz()
 
 
+def _default_classifier_metadata() -> dict:
+    return {
+        "confidence": 0.0,
+        "low_confidence": False,
+        "low_confidence_reason": None,
+    }
+
+
+def _extract_classifier_metadata(result: list[str]) -> dict:
+    return {
+        "confidence": getattr(result, "confidence", 0.0),
+        "low_confidence": bool(getattr(result, "low_confidence", False)),
+        "low_confidence_reason": getattr(result, "low_confidence_reason", None),
+    }
+
+
+def _default_retrieval_metadata() -> dict:
+    return {
+        "top_similarity": 0.0,
+        "is_fallback": False,
+        "fallback_reason": None,
+    }
+
+
+def _extract_retrieval_metadata(result: list[dict]) -> dict:
+    return {
+        "top_similarity": getattr(result, "top_similarity", 0.0),
+        "is_fallback": bool(getattr(result, "is_fallback", False)),
+        "fallback_reason": getattr(result, "fallback_reason", None),
+    }
+
+
+def _log_step_warning(event: str, session_id: str | None, error: Exception) -> None:
+    logger.warning(
+        event,
+        error=str(error),
+        session_id=session_id,
+    )
+
+
 @app.post("/api/truth/query")
 def truth_query(payload: TruthQueryRequest) -> dict:
     try:
         with connect_db() as connection:
             connection.execute("SELECT 1")
-    except sqlite3.DatabaseError:
+    except sqlite3.DatabaseError as exc:
+        _log_step_warning("truth_query_db_unavailable", payload.session_id, exc)
         response = compose_response(payload.message, [])
         return {
             "mirror": response["mirror"],
@@ -83,12 +143,37 @@ def truth_query(payload: TruthQueryRequest) -> dict:
             ),
         }
 
-    dimensions = classify_dimensions(payload.message)
+    step_failures: list[str] = []
+    classifier_metadata = _default_classifier_metadata()
+    retrieval_metadata = _default_retrieval_metadata()
 
     try:
-        puzzles = retrieve_puzzles(payload.message, dimensions=dimensions, limit=12)
-    except Exception:
+        dimensions_result = classify_dimensions(payload.message)
+        dimensions = list(dimensions_result)
+        classifier_metadata = _extract_classifier_metadata(dimensions_result)
+    except Exception as exc:
+        _log_step_warning("truth_query_classifier_failed", payload.session_id, exc)
+        step_failures.append("classifier")
+        dimensions = []
+        classifier_metadata = {
+            "confidence": 0.0,
+            "low_confidence": True,
+            "low_confidence_reason": "classifier_error",
+        }
+
+    try:
+        retrieval_result = retrieve_puzzles(payload.message, dimensions=dimensions, limit=12)
+        puzzles = list(retrieval_result)
+        retrieval_metadata = _extract_retrieval_metadata(retrieval_result)
+    except Exception as exc:
+        _log_step_warning("truth_query_retriever_failed", payload.session_id, exc)
+        step_failures.append("retriever")
         puzzles = []
+        retrieval_metadata = {
+            "top_similarity": 0.0,
+            "is_fallback": True,
+            "fallback_reason": "retriever_error",
+        }
 
     top_puzzle = puzzles[0] if puzzles else None
     leading_dimension = (
@@ -110,7 +195,9 @@ def truth_query(payload: TruthQueryRequest) -> dict:
                 "primary_recurring_pattern": soul_map_engine.get_primary_pattern(payload.user_id),
                 "evolution_stage": (soul_map or {}).get("evolution_stage", "awakening"),
             }
-    except sqlite3.DatabaseError:
+    except Exception as exc:
+        _log_step_warning("truth_query_soul_map_failed", payload.session_id, exc)
+        step_failures.append("soul_map")
         user_context = {
             "soul_map_summary": "",
             "primary_recurring_pattern": "Soul Map not yet built for this user.",
@@ -141,14 +228,19 @@ def truth_query(payload: TruthQueryRequest) -> dict:
         life_evidence=life_evidence,
         soul_map_patterns=soul_map_patterns,
     )
-    eval_id = write_truth_eval(
-        user_id=payload.user_id,
-        session_id=payload.session_id,
-        question=payload.message,
-        verification_track=track.value,
-        life_evidence_confirmed=bool(life_evidence),
-        discovery_triggered=False,
-    )
+    try:
+        eval_id = write_truth_eval(
+            user_id=payload.user_id,
+            session_id=payload.session_id,
+            question=payload.message,
+            verification_track=track.value,
+            life_evidence_confirmed=bool(life_evidence),
+            discovery_triggered=False,
+        )
+    except Exception as exc:
+        _log_step_warning("truth_query_belief_log_writeback_failed", payload.session_id, exc)
+        step_failures.append("belief_log_writeback")
+        eval_id = None
     writeback = {
         "belieflogcandidate": bool(life_evidence),
         "blindspotcandidate": _detect_blindspot_candidate(payload.message, top_puzzle),
@@ -171,17 +263,25 @@ def truth_query(payload: TruthQueryRequest) -> dict:
                 session_id=payload.session_id or "",
             )
             if writeback["blindspotcandidate"]:
-                blind_spot_id = soul_map_engine.update_blind_spot(
-                    user_id=payload.user_id,
-                    trigger_pattern=detected_patterns[0] if detected_patterns else leading_dimension,
-                    known_theory=response["truth_view"],
-                    practical_failure_mode=(top_puzzle or {}).get("misbelief") or "",
-                    domains=[leading_dimension],
-                    related_puzzle_ids=[puzzle["id"] for puzzle in puzzles if puzzle.get("id")],
-                )
-                soul_map_changes.setdefault("delta", {}).setdefault(
-                    "new_blind_spots", []
-                ).append(blind_spot_id)
+                try:
+                    blind_spot_id = soul_map_engine.update_blind_spot(
+                        user_id=payload.user_id,
+                        trigger_pattern=detected_patterns[0] if detected_patterns else leading_dimension,
+                        known_theory=response["truth_view"],
+                        practical_failure_mode=(top_puzzle or {}).get("misbelief") or "",
+                        domains=[leading_dimension],
+                        related_puzzle_ids=[puzzle["id"] for puzzle in puzzles if puzzle.get("id")],
+                    )
+                    soul_map_changes.setdefault("delta", {}).setdefault(
+                        "new_blind_spots", []
+                    ).append(blind_spot_id)
+                except Exception as exc:
+                    _log_step_warning(
+                        "truth_query_blind_spot_writeback_failed",
+                        payload.session_id,
+                        exc,
+                    )
+                    step_failures.append("blind_spot_writeback")
             hard_case = soul_map_engine.detect_hard_case(payload.user_id)
             message_hard_case_reasons = _message_hard_case_reasons(payload.message)
             if message_hard_case_reasons:
@@ -228,10 +328,22 @@ def truth_query(payload: TruthQueryRequest) -> dict:
                         ),
                     )
                 connection.commit()
-    except sqlite3.DatabaseError:
+    except Exception as exc:
+        _log_step_warning("truth_query_soul_map_writeback_failed", payload.session_id, exc)
+        step_failures.append("soul_map_writeback")
         soul_map_changes = {"updated": [], "new_patterns": [], "stage_change": None}
 
     writeback["soul_map_changes"] = soul_map_changes
+    writeback["_internal"] = {
+        "classifier": classifier_metadata,
+        "retrieval": retrieval_metadata,
+        "step_failures": step_failures,
+    }
+    writeback["_internal"]["partial_failure"] = bool(
+        step_failures
+        or classifier_metadata["low_confidence"]
+        or retrieval_metadata["is_fallback"]
+    )
     soul_map_delta = soul_map_changes.get("delta", {})
     soul_map_updated = bool(soul_map_changes.get("was_updated", True))
 

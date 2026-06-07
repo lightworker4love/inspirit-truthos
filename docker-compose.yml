@@ -20,6 +20,26 @@ services:
     networks:
       - inspirit-net
 
+  analytics-exporter:
+    build:
+      context: .
+      dockerfile: apps/truth-worker/Dockerfile
+    command: >
+      sh -lc "
+        printf '0 2 * * * cd /app/apps/truth-worker && python -m jobs.export_analytics\\n' | crontab - &&
+        cron -f
+      "
+    environment:
+      TRUTHOS_DB_PATH: /app/data/truthos.db
+      TRUTHOS_EXPORT_DIR: /app/data/exports
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - truth-api
+    restart: unless-stopped
+    networks:
+      - inspirit-net
+
   hermes-agent:
     build:
       context: .
