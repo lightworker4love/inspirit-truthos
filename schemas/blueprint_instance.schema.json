@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Blueprint Instance",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "primary_persona": {
+      "type": "string"
+    },
+    "current_core_lesson": {
+      "type": "string"
+    },
+    "known_patterns": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "integrated_wisdom": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "current_blind_spots": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "stage": {
+      "type": "string",
+      "enum": ["DRAFT", "CANONICAL"]
+    }
+  },
+  "required": ["user_id", "current_core_lesson", "stage"]
+}

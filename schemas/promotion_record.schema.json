@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Promotion Record",
+  "type": "object",
+  "properties": {
+    "hypothesis_id": {
+      "type": "string"
+    },
+    "payload_type": {
+      "type": "string",
+      "enum": ["wisdom_entry", "blueprint_instance"]
+    },
+    "human_approved": {
+      "type": "boolean"
+    },
+    "resonance_score": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "reviewer_notes": {
+      "type": "string"
+    }
+  },
+  "required": ["hypothesis_id", "payload_type", "human_approved"]
+}

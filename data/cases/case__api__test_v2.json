@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "case_id": "case:api:test_v2",
+  "login_username": "test_v2",
+  "preferred_name": "test_v2",
+  "display_name": null,
+  "aliases": [],
+  "source_channel": "api",
+  "memory_namespace": "cases/api/test_v2",
+  "soul_age": null,
+  "life_themes": [],
+  "blind_spots": [],
+  "last_session_insight": null,
+  "first_seen_at": "2026-03-14T10:43:49.954387+00:00",
+  "last_seen_at": "2026-03-14T11:40:34.626303+00:00",
+  "metadata": {}
+}

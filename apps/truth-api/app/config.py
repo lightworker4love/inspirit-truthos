@@ -19,6 +19,13 @@ def get_env(name: str, default: str | None = None) -> str | None:
     return os.getenv(name, default)
 
 
+def get_bool_env(name: str, default: bool) -> bool:
+    raw = get_env(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def resolve_path(value: str | Path, *, base: Path | None = None) -> Path:
     path = Path(value)
     if path.is_absolute():
@@ -66,3 +73,7 @@ def get_chat_model() -> str:
 def get_dimension_classifier_llm_fallback() -> bool:
     raw = (get_env("DIMENSION_CLASSIFIER_LLM_FALLBACK", "true") or "true").strip().lower()
     return raw in {"1", "true", "yes", "on"}
+
+
+def get_blueprint_writeback_enabled() -> bool:
+    return get_bool_env("BLUEPRINT_WRITEBACK_ENABLED", True)

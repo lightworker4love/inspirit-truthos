@@ -9,6 +9,17 @@ services:
       TRUTHOS_DB_PATH: ${TRUTHOS_DB_PATH:-/app/data/truthos.db}
       TRUTHOS_API_HOST: ${TRUTHOS_API_HOST:-0.0.0.0}
       TRUTHOS_API_PORT: ${TRUTHOS_API_PORT:-8000}
+      BLUEPRINT_WRITEBACK_ENABLED: ${BLUEPRINT_WRITEBACK_ENABLED:-true}
+      # --- Long-term memory feature flags (default OFF) ---
+      MEMORY_LONGTERM_ENABLED: ${MEMORY_LONGTERM_ENABLED:-false}
+      MEMORY_READ_ENABLED: ${MEMORY_READ_ENABLED:-false}
+      MEMORY_WRITE_ENABLED: ${MEMORY_WRITE_ENABLED:-false}
+      MEMORY_USER_ID_SOURCE: ${MEMORY_USER_ID_SOURCE:-auth}
+      MEMORY_TRUST_PROXY_USER_ID: ${MEMORY_TRUST_PROXY_USER_ID:-false}
+      MEM0_BASE_URL: ${MEM0_BASE_URL:-http://mem0:8000}
+      MEM0_API_KEY: ${MEM0_API_KEY:-}
+      QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-}
     command: >
       sh -lc "python scripts/seed_import.py
       && python scripts/build_vector_index.py
@@ -20,3 +31,48 @@ services:
       - "host.docker.internal:host-gateway"
     ports:
       - "18000:${TRUTHOS_API_PORT:-8000}"
+
+  # ---------------------------------------------------------------------------
+  # Phase 1 memory infra — START COMMENTED OUT intentionally.
+  # Enable only after reviewing docs/local-memory-phased-deployment-plan.md.
+  # To activate: uncomment both service blocks and the volumes stanza, validate
+  # infra health, install memory deps, run memory tests, then set memory flags
+  # in .env (MEMORY_LONGTERM_ENABLED / MEMORY_READ_ENABLED / MEMORY_WRITE_ENABLED).
+  # Host ports (16333, 16334, 18081) are collision-safe with all known local
+  # services. Do NOT wire qdrant/mem0 into truth-api depends_on without a
+  # deliberate rollout decision.
+  # ---------------------------------------------------------------------------
+
+  qdrant:
+    image: qdrant/qdrant:v1.13.4
+    restart: unless-stopped
+    ports:
+      - "16333:6333"   # HTTP API
+      - "16334:6334"   # gRPC
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  mem0:
+    image: mem0/mem0-api-server:latest  # local-only exception: latest allowed for this first local validation only, no shared rollout until verified non-latest tag.
+    restart: unless-stopped
+    depends_on:
+      - qdrant
+    ports:
+      - "18081:8000"
+    environment:
+      MEM0_CONFIG_PATH: /app/config.yaml
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-dummy}
+    volumes:
+      - mem0_data:/var/lib/mem0
+      - ./mem0-config.yaml:/app/config.yaml:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/health || wget -qO- http://127.0.0.1:8000/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+# Named volumes (uncomment alongside services above when activating Phase 1)
+volumes:
+  qdrant_data:
+  mem0_data:

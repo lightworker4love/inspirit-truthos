@@ -208,6 +208,7 @@ def test_healthz_reports_ollama_local_without_gateway(monkeypatch):
     assert response.status_code == 200
     assert response.json() == {
         "status": "ok",
+        "blueprint_writeback_enabled": True,
         "embedding_gateway": False,
         "vector_index": True,
         "embedding_mode": "ollama-local",

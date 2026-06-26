@@ -1,0 +1,19 @@
+{
+  "case_id": "case:web:hank",
+  "login_username": "Hank",
+  "preferred_name": "Hank",
+  "display_name": "Hank",
+  "aliases": [],
+  "source_channel": "web",
+  "memory_namespace": "cases/web/hank",
+  "soul_age": null,
+  "life_themes": [],
+  "blind_spots": [],
+  "last_session_insight": null,
+  "first_seen_at": null,
+  "last_seen_at": null,
+  "metadata": {
+    "wisdom_db_username": "Hank",
+    "note": "Seeded from wisdom-cases.db. preferred_name takes priority over USER.md in all AI responses."
+  }
+}

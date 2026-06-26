@@ -1,0 +1,50 @@
+{
+  "api_base": "http://127.0.0.1:18000",
+  "endpoint": "http://127.0.0.1:18000/api/reflection/writeback",
+  "notes": [
+    "No same-day core principle draft events found; using empty draft list.",
+    "No same-day truth puzzle draft events found; using empty draft list."
+  ],
+  "payload_fingerprint": "ba0b9885f34e3f736187cf00b7212dc7f85a1e83790b8bb367a3b1e9252f6398",
+  "posted_at": "2026-03-15T01:19:30.288245Z",
+  "response": {
+    "accepted_streams": [
+      "case_summary_candidate_events",
+      "dashboard_daily_metrics",
+      "dashboard_pattern_snapshots",
+      "dashboard_snapshots",
+      "reflection_discernment_layers",
+      "reflection_runs",
+      "reflection_truth_mappings"
+    ],
+    "blocked_reasons": [],
+    "duplicate_keys": [],
+    "next_actions": [
+      "Run POST /api/reflection/materialize after a successful writeback.",
+      "Provide a readable life principles attachment for higher-confidence mapping."
+    ],
+    "skipped_streams": [
+      "belief_log_candidate_events",
+      "blind_spot_candidate_events",
+      "soul_map_candidate_events"
+    ],
+    "written_records": {
+      "case_summary_candidate_events": 1,
+      "dashboard_daily_metrics": 1,
+      "dashboard_pattern_snapshots": 2,
+      "dashboard_snapshots": 1,
+      "reflection_discernment_layers": 14,
+      "reflection_runs": 1,
+      "reflection_truth_mappings": 9
+    }
+  },
+  "retry": {
+    "next_retry_command": null,
+    "recommended": false
+  },
+  "run_date": "2026-03-15",
+  "source_file": "/Users/tongwei/.openclaw/inspirit-truthos/data/daily_reflections/2026-03-15/reflection.json",
+  "status": "success",
+  "tenant_id": "inspirit-local",
+  "user_id": "tongwei"
+}

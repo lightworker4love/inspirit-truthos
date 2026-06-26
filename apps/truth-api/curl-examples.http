@@ -1,0 +1,48 @@
+@baseUrl = http://127.0.0.1:8010
+@username = hank
+@password = secret
+
+### health
+GET {{baseUrl}}/health
+
+### login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{username}}",
+  "password": "{{password}}"
+}
+
+### allowed models
+GET {{baseUrl}}/models/allowed
+Authorization: Bearer {{sessionToken}}
+
+### create thread
+POST {{baseUrl}}/threads
+Authorization: Bearer {{sessionToken}}
+Content-Type: application/json
+
+{
+  "mode": "spiritual_reflection",
+  "title": "HTTP Client Smoke Test"
+}
+
+### chat
+POST {{baseUrl}}/chat
+Authorization: Bearer {{sessionToken}}
+Content-Type: application/json
+
+{
+  "threadId": "{{threadId}}",
+  "message": "這是一則測試訊息，請溫和回應一句話。",
+  "mode": "spiritual_reflection"
+}
+
+### me
+GET {{baseUrl}}/me
+Authorization: Bearer {{sessionToken}}
+
+### admin audit
+GET {{baseUrl}}/admin/audit?limit=20
+Authorization: Bearer {{adminSessionToken}}

@@ -1,0 +1,30 @@
+{
+  "api_base": "http://127.0.0.1:18000",
+  "endpoint": "http://127.0.0.1:18000/api/reflection/materialize",
+  "mode": "incremental",
+  "payload_fingerprint": "ba0b9885f34e3f736187cf00b7212dc7f85a1e83790b8bb367a3b1e9252f6398",
+  "posted_at": "2026-03-15T01:19:30.305825Z",
+  "response": {
+    "generated_records": {
+      "belief_shift_view": 0,
+      "blind_spot_heatmap_view": 0,
+      "dashboard_overview_view": 3,
+      "dimension_trends_view": 3,
+      "recurring_patterns_view": 2
+    },
+    "materialized_views": [
+      "dashboard_overview_view",
+      "dimension_trends_view",
+      "recurring_patterns_view",
+      "belief_shift_view",
+      "blind_spot_heatmap_view"
+    ],
+    "next_actions": [
+      "Call GET /api/reflection/dashboard/overview to inspect the latest projections."
+    ]
+  },
+  "run_date": "2026-03-15",
+  "status": "success",
+  "tenant_id": "inspirit-local",
+  "user_id": "tongwei"
+}

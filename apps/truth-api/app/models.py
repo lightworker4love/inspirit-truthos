@@ -10,6 +10,7 @@ class TruthQueryRequest(BaseModel):
     mode: str = Field(default="mentor")
     depth: str = Field(default="standard")
     language: str = Field(default="en")
+    dry_run: bool = False
 
     # --- Case identity fields (optional; resolved into CaseContext by the route handler) ---
     # These are passed from the proxy / frontend when known; all are optional

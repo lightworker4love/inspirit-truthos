@@ -9,6 +9,14 @@ from app.embedding_pipeline import VECTOR_TABLE_NAME, embed, embedding_available
 from app.vector_index import ensure_vector_index, vector_index_exists
 
 
+def get_retrieval_mode() -> str:
+    if vector_index_exists():
+        return "vector"
+    if embedding_available():
+        return "rebuilt"
+    return "sqlite"
+
+
 def _get_full_puzzles(puzzle_ids: Sequence[str]) -> dict[str, dict]:
     if not puzzle_ids:
         return {}
@@ -151,12 +159,12 @@ def _vector_search(query: str, dimensions: Sequence[str] | None = None, limit: i
     return results
 
 
-def retrieve_puzzles(query: str, dimensions: Sequence[str] | None = None, limit: int = 12) -> list[dict]:
+def retrieve_puzzles(query: str, dimensions: Sequence[str] | None = None, limit: int = 12) -> dict:
     if vector_index_exists():
         try:
             results = _vector_search(query, dimensions=dimensions, limit=limit)
             if results:
-                return results
+                return {"puzzles": results, "retrieval_mode": "vector"}
         except Exception:
             pass
 
@@ -164,8 +172,11 @@ def retrieve_puzzles(query: str, dimensions: Sequence[str] | None = None, limit:
         try:
             results = _vector_search(query, dimensions=dimensions, limit=limit)
             if results:
-                return results
+                return {"puzzles": results, "retrieval_mode": "rebuilt"}
         except Exception:
             pass
 
-    return _sqlite_keyword_search(query, dimensions=dimensions, limit=limit)
+    return {
+        "puzzles": _sqlite_keyword_search(query, dimensions=dimensions, limit=limit),
+        "retrieval_mode": "sqlite",
+    }

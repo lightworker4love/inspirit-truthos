@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "case_id": "case:api:test",
+  "login_username": "test",
+  "preferred_name": "test",
+  "display_name": null,
+  "aliases": [],
+  "source_channel": "api",
+  "memory_namespace": "cases/api/test",
+  "soul_age": null,
+  "life_themes": [],
+  "blind_spots": [],
+  "last_session_insight": "目前檢索結果顯示，議題主要落在 motive 維度，並與 MOT_001 這些 principle 有關。常見誤區是「只要沒有討好，我就不會被需要。」，較完整的真相重構是「真實動機不必用討好換取位置。」。",
+  "first_seen_at": "2026-03-14T10:32:19.144045+00:00",
+  "last_seen_at": "2026-03-14T10:48:01.375217+00:00",
+  "metadata": {}
+}

@@ -1,0 +1,8 @@
+{
+  "event_id": "evt_0001",
+  "timestamp": "2026-03-14T14:30:00Z",
+  "action": "REJECTION",
+  "actor_id": "dry_run_system",
+  "target_record_id": "uuid-draft-0001",
+  "successful": true
+}

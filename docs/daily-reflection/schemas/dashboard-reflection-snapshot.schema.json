@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inspirit.local/schemas/dashboard-reflection-snapshot.schema.json",
+  "title": "DashboardReflectionSnapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "run_date",
+    "time_window_hours",
+    "daily_timeline",
+    "dimension_scores",
+    "recurring_patterns",
+    "belief_shifts",
+    "blind_spots",
+    "alignment_metrics",
+    "source_run_path"
+  ],
+  "properties": {
+    "run_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "time_window_hours": {
+      "type": "integer",
+      "enum": [
+        24,
+        72
+      ]
+    },
+    "daily_timeline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "primary_dimensions",
+        "primary_principles",
+        "primary_fluctuations"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string"
+        },
+        "primary_dimensions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "primary_principles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "primary_fluctuations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "dimension_scores": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dimension_code",
+          "score"
+        ],
+        "properties": {
+          "dimension_code": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "recurring_patterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pattern_key",
+          "title",
+          "count_increment",
+          "last_seen",
+          "confidence"
+        ],
+        "properties": {
+          "pattern_key": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "count_increment": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "last_seen": {
+            "type": "string",
+            "format": "date"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "belief_shifts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "belief_key",
+          "belief_before",
+          "belief_after",
+          "evidence_count",
+          "related_dimension_code"
+        ],
+        "properties": {
+          "belief_key": {
+            "type": "string"
+          },
+          "belief_before": {
+            "type": "string"
+          },
+          "belief_after": {
+            "type": "string"
+          },
+          "evidence_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "related_dimension_code": {
+            "type": "string"
+          },
+          "related_principle_code": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "blind_spots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "blind_spot_key",
+          "title",
+          "trigger_pattern",
+          "failure_mode",
+          "status"
+        ],
+        "properties": {
+          "blind_spot_key": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "trigger_pattern": {
+            "type": "string"
+          },
+          "failure_mode": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "candidate",
+              "active",
+              "improving",
+              "resolved"
+            ]
+          }
+        }
+      }
+    },
+    "alignment_metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clarity_score",
+        "boundary_score",
+        "discernment_score",
+        "alignment_score",
+        "emotional_intensity_score",
+        "memory_confidence_score"
+      ],
+      "properties": {
+        "clarity_score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "boundary_score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "discernment_score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "alignment_score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "emotional_intensity_score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "memory_confidence_score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "source_run_path": {
+      "type": "string"
+    }
+  }
+}

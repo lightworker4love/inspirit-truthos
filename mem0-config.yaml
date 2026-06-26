@@ -1,0 +1,8 @@
+vector_store:
+  provider: qdrant
+  config:
+    url: http://qdrant:6333
+llm:
+  provider: openai
+  config:
+    model: gpt-4o

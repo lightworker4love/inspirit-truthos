@@ -45,12 +45,26 @@ Ollama now provides the primary local embeddings endpoint for development, while
 ## Verification commands
 
 ```bash
+python3 -m py_compile \
+  apps/truth-api/app/config.py \
+  apps/truth-api/app/gateway_check.py \
+  apps/truth-api/app/embedding_pipeline.py \
+  apps/truth-api/app/main.py \
+  apps/truth-api/tests/test_truthos_integration_phase_2.py
+
+./.venv311/bin/python -m pytest apps/truth-api/tests/test_truthos_integration_phase_2.py -q
+./.venv311/bin/python -m pytest apps/truth-api/tests/test_case_identity_phase_1_5.py -q
+
 docker compose up --build -d
 ./scripts/check_embedding_mode.sh
 ./scripts/smoke_test.sh
 curl -s http://localhost:18000/healthz | python3 -m json.tool
+curl -s -X POST http://localhost:18000/api/truth/query \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"mode-check-user","session_id":"mode-check-001","message":"我一直在關係裡討好對方，卻感到很委屈，不知道為什麼","mode":"mentor","language":"zh"}' \
+  | python3 -m json.tool
 ```
 
 ## Commit hash
 
-`<fill-after-commit>`
+`312a93f`

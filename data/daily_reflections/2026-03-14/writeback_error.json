@@ -1,0 +1,21 @@
+{
+  "api_base": "http://127.0.0.1:18000",
+  "attempted_at": "2026-03-14T01:02:46.727315Z",
+  "endpoint": "http://127.0.0.1:18000/api/reflection/writeback",
+  "error_message": "HTTP Error 404: Not Found",
+  "error_type": "HTTPError",
+  "notes": [
+    "No same-day core principle draft events found; using empty draft list.",
+    "No same-day truth puzzle draft events found; using empty draft list."
+  ],
+  "payload_fingerprint": "9ccf7244931316fa0520b82f4b09f484ecd83c836753d734e7f8f6e4b14c7709",
+  "retry": {
+    "next_retry_command": "python /Users/tongwei/.openclaw/inspirit-truthos/scripts/bridge_daily_reflection_to_api.py --date 2026-03-14 --api-base http://127.0.0.1:18000 --user-id tongwei --tenant-id inspirit-local --force",
+    "recommended": true
+  },
+  "run_date": "2026-03-14",
+  "source_file": "/Users/tongwei/.openclaw/inspirit-truthos/data/daily_reflections/2026-03-14/reflection.json",
+  "status": "error",
+  "tenant_id": "inspirit-local",
+  "user_id": "tongwei"
+}
