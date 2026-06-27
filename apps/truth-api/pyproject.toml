@@ -34,7 +34,8 @@ pythonpath = ["."]
 addopts = "-q"
 
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+# Security floor: setuptools>=78.1.1
+requires = ["setuptools==80.9.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]

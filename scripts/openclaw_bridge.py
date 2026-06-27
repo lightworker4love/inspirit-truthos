@@ -5,31 +5,71 @@ import json
 import os
 import sys
 from pathlib import Path
-from urllib import error, request
+from urllib.parse import urlparse
+from urllib.parse import urlunparse
 
+import httpx
 from fastapi import FastAPI
+from pydantic import BaseModel
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "apps/truth-api"))
 
-from app.models import BridgeQueryRequest
+ALLOWED_SCHEMES = {"http", "https"}
+BLOCKED_HOSTS = {
+    "0.0.0.0",
+    "169.254.169.254",
+}
+_ALLOWED_TRUTHOS_HOSTS = {"localhost", "127.0.0.1", "::1"} - BLOCKED_HOSTS
 
-TRUTHOS_INTERNAL_URL = os.getenv("TRUTHOS_INTERNAL_URL", "http://localhost:18000").rstrip("/")
+
+def sanitize_internal_url(raw_url: str) -> str:
+    candidate = raw_url.strip().rstrip("/")
+    parsed = urlparse(candidate)
+    hostname = (parsed.hostname or "").lower()
+    if parsed.scheme not in ALLOWED_SCHEMES:
+        raise ValueError("TRUTHOS_INTERNAL_URL must use http or https")
+    if not hostname:
+        raise ValueError("TRUTHOS_INTERNAL_URL must include a hostname")
+    if parsed.username or parsed.password:
+        raise ValueError("TRUTHOS_INTERNAL_URL must not embed credentials")
+    if hostname in BLOCKED_HOSTS or hostname not in _ALLOWED_TRUTHOS_HOSTS:
+        raise ValueError("TRUTHOS_INTERNAL_URL host is not allowlisted")
+    netloc = hostname
+    if parsed.port is not None:
+        netloc = f"{netloc}:{parsed.port}"
+    return urlunparse((parsed.scheme, netloc, parsed.path, "", parsed.query, ""))
+
+
+def _validated_truthos_internal_url(raw_url: str) -> str:
+    return sanitize_internal_url(raw_url)
+
 
 app = FastAPI(title="TruthOS OpenClaw Bridge", version="0.1.0")
 
 
+class BridgeQueryRequest(BaseModel):
+    user_id: str
+    session_id: str | None = None
+    message: str
+    mode: str = "mentor"
+
+
+def _truthos_internal_url() -> str:
+    raw_url = os.getenv("TRUTHOS_INTERNAL_URL", "http://localhost:18000")
+    return sanitize_internal_url(raw_url)
+
+
 def _post_truthos(payload: dict, timeout: float = 3.0) -> dict:
-    endpoint = f"{TRUTHOS_INTERNAL_URL}/api/truth/query"
-    data = json.dumps(payload).encode("utf-8")
-    req = request.Request(
+    endpoint = sanitize_internal_url(f"{_truthos_internal_url()}/api/truth/query")
+    response = httpx.post(
         endpoint,
-        data=data,
         headers={"Content-Type": "application/json"},
-        method="POST",
+        json=payload,
+        timeout=timeout,
     )
-    with request.urlopen(req, timeout=timeout) as response:
-        return json.loads(response.read().decode("utf-8"))
+    response.raise_for_status()
+    return response.json()
 
 
 async def query_truthos(
@@ -46,7 +86,7 @@ async def query_truthos(
     }
     try:
         return await asyncio.to_thread(_post_truthos, payload, 3.0)
-    except (TimeoutError, error.URLError, error.HTTPError, ValueError):
+    except (TimeoutError, httpx.HTTPError, ValueError, json.JSONDecodeError):
         return {"mirror": None, "error": "TruthOS unavailable"}
 
 
