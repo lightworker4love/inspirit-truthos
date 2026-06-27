@@ -5,3 +5,13 @@ __pycache__/
 .venv311/
 data/*.db
 data/lancedb/
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+
+# temp env files
+.env.temp
+.env.local
+.env.*.local
