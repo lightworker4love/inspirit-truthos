@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inspirit.local/schemas/truthos-import-drafts.schema.json",
+  "title": "TruthOSImportDrafts",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "core_principle_candidates",
+    "truth_puzzle_candidates"
+  ],
+  "properties": {
+    "core_principle_candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "dimension",
+          "title",
+          "axiom",
+          "explanation",
+          "shadow_form",
+          "truth_form",
+          "coach_questions",
+          "source_refs",
+          "status",
+          "generated_from_run_date",
+          "cross_day_support_count"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "dimension": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "axiom": {
+            "type": "string"
+          },
+          "explanation": {
+            "type": "string"
+          },
+          "shadow_form": {
+            "type": "string"
+          },
+          "truth_form": {
+            "type": "string"
+          },
+          "coach_questions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "source_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "const": "draft"
+          },
+          "generated_from_run_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "cross_day_support_count": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    },
+    "truth_puzzle_candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "dimension",
+          "principle_code",
+          "title",
+          "statement",
+          "pattern_type",
+          "misbelief",
+          "truth_reframe",
+          "coach_prompt",
+          "trigger_signals",
+          "use_cases",
+          "tags",
+          "source_doc",
+          "source_excerpt",
+          "status",
+          "generated_from_run_date",
+          "cross_day_support_count"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "dimension": {
+            "type": "string"
+          },
+          "principle_code": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "statement": {
+            "type": "string"
+          },
+          "pattern_type": {
+            "type": "string"
+          },
+          "misbelief": {
+            "type": "string"
+          },
+          "truth_reframe": {
+            "type": "string"
+          },
+          "coach_prompt": {
+            "type": "string"
+          },
+          "trigger_signals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "use_cases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "source_doc": {
+            "type": "string"
+          },
+          "source_excerpt": {
+            "type": "string"
+          },
+          "status": {
+            "const": "draft"
+          },
+          "generated_from_run_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "cross_day_support_count": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,47 @@
+# in spirit truth-api Daily Ops Report
+
+- Date: {{DATE}}
+- Host: {{HOSTNAME}}
+- Operator: {{OPERATOR}}
+- Service: truth-api
+- Environment: {{ENVIRONMENT}}
+
+## Health summary
+
+- truth-api health: {{TRUTH_API_HEALTH}}
+- OpenClaw health: {{OPENCLAW_HEALTH}}
+- truth-api LaunchAgent: {{TRUTH_API_LAUNCHD}}
+- OpenClaw LaunchAgent: {{OPENCLAW_LAUNCHD}}
+
+## Database snapshot
+
+- DB path: {{DB_PATH}}
+- users count: {{USERS_COUNT}}
+- case_profiles count: {{CASE_PROFILES_COUNT}}
+- case_threads count: {{CASE_THREADS_COUNT}}
+- case_entries count: {{CASE_ENTRIES_COUNT}}
+- audit_logs count: {{AUDIT_LOGS_COUNT}}
+
+## Audit highlights
+
+- latest login events: {{LOGIN_EVENTS}}
+- latest thread events: {{THREAD_EVENTS}}
+- latest chat success/failure: {{CHAT_EVENTS}}
+
+## Recent anomalies
+
+- stderr summary: {{STDERR_SUMMARY}}
+- stdout summary: {{STDOUT_SUMMARY}}
+- open items: {{OPEN_ITEMS}}
+
+## Actions taken today
+
+1. {{ACTION_1}}
+2. {{ACTION_2}}
+3. {{ACTION_3}}
+
+## Next checks
+
+- {{NEXT_CHECK_1}}
+- {{NEXT_CHECK_2}}
+- {{NEXT_CHECK_3}}

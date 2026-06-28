@@ -258,4 +258,3 @@ The embedding gateway is configurable. TruthOS can report gateway availability t
 - Keep transport, persistence, and prompt logic separate when extending the integration.
 - Update `SCHEMA.md` whenever request or response contracts change.
 - Update this guide when new agent surfaces, payload fields, or review states are added.
-

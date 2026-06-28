@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "case_id": "case:web:hank-login",
+  "login_username": "hank-login",
+  "preferred_name": "Hank",
+  "display_name": "Case Hank",
+  "aliases": [],
+  "source_channel": "web",
+  "memory_namespace": "cases/web/hank-login",
+  "soul_age": null,
+  "life_themes": [],
+  "blind_spots": [],
+  "last_session_insight": "目前檢索結果顯示，議題主要落在 suffering 維度，並與 SUF_001 這些 principle 有關。常見誤區是「若失去受害者認同，別人就不會理解我的痛。」，較完整的真相重構是「承認痛苦不等於繼續住在受害者認同裡。」。",
+  "first_seen_at": "2026-03-14T02:27:03.453867+00:00",
+  "last_seen_at": "2026-03-14T02:27:51.142510+00:00",
+  "metadata": {}
+}

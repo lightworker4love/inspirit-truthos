@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "case_id": "case:api:mode-check-user",
+  "login_username": "mode-check-user",
+  "preferred_name": "mode-check-user",
+  "display_name": null,
+  "aliases": [],
+  "source_channel": "api",
+  "memory_namespace": "cases/api/mode-check-user",
+  "soul_age": null,
+  "life_themes": [
+    "relationships and intimacy"
+  ],
+  "blind_spots": [
+    "people-pleasing over direct boundaries"
+  ],
+  "last_session_insight": "目前檢索結果顯示，議題主要落在 cognition 維度，並與 COG_007 這些 principle 有關。常見誤區是「我的第一個解讀若帶著自我否定，那就一定是真相。」，較完整的真相重構是「自我否定只是其中一種解讀，不是全部事實。」。",
+  "first_seen_at": "2026-03-12T17:58:27.665799+00:00",
+  "last_seen_at": "2026-03-12T17:58:27.665799+00:00",
+  "metadata": {}
+}

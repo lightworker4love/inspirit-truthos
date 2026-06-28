@@ -1,0 +1,7 @@
+{
+  "hypothesis_id": "uuid-draft-0001",
+  "payload_type": "blueprint_instance",
+  "human_approved": false,
+  "resonance_score": 8,
+  "reviewer_notes": "The hypothesis is solid, but we need to ensure the user actually demonstrated this pattern in a real scenario before writing to Canonical."
+}

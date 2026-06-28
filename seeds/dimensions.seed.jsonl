@@ -1,0 +1,12 @@
+{"id":"dim_motive","code":"motive","name_zh":"動機","name_en":"Motive","description":"起心動念與初衷","order_index":1}
+{"id":"dim_cognition","code":"cognition","name_zh":"認知","name_en":"Cognition","description":"解讀、觀點與 reality 框架","order_index":2}
+{"id":"dim_emotion","code":"emotion","name_zh":"情緒","name_en":"Emotion","description":"情緒波動與轉化","order_index":3}
+{"id":"dim_relationship","code":"relationship","name_zh":"關係","name_en":"Relationship","description":"親密、家庭、界線與互動","order_index":4}
+{"id":"dim_belief","code":"belief","name_zh":"信念","name_en":"Belief","description":"限制性信念與保護機制","order_index":5}
+{"id":"dim_evolution","code":"evolution","name_zh":"進化","name_en":"Evolution","description":"生命課題、成長與進化","order_index":6}
+{"id":"dim_causality","code":"causality","name_zh":"因果","name_en":"Causality","description":"選擇、後果與責任","order_index":7}
+{"id":"dim_manifestation","code":"manifestation","name_zh":"顯化","name_en":"Manifestation","description":"創造、資源、金錢與結果","order_index":8}
+{"id":"dim_suffering","code":"suffering","name_zh":"痛苦","name_en":"Suffering","description":"創傷、失落、低谷與轉化","order_index":9}
+{"id":"dim_freedom","code":"freedom","name_zh":"自由","name_en":"Freedom","description":"放下、界線、無掛礙","order_index":10}
+{"id":"dim_compassion","code":"compassion","name_zh":"慈悲","name_en":"Compassion","description":"愛、接納、寬恕與支援","order_index":11}
+{"id":"dim_discernment","code":"discernment","name_zh":"辨識","name_en":"Discernment","description":"真假、去幻、真理辨識","order_index":12}

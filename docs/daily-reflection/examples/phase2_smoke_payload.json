@@ -1,0 +1,373 @@
+{
+  "run_date": "2026-03-13",
+  "user_id": "smoke-user",
+  "tenant_id": null,
+  "source_file": "/Users/tongwei/.openclaw/inspirit-truthos/data/daily_reflections/2026-03-13/reflection.json",
+  "source_run_id": "smoke-user:2026-03-13",
+  "reflection_run": {
+    "run_date": "2026-03-13",
+    "time_window": {
+      "start": "2026-03-12T09:00:00+08:00",
+      "end": "2026-03-13T09:00:00+08:00",
+      "timezone": "Asia/Taipei",
+      "window_hours": 24
+    },
+    "summary": "這是一筆用於驗證 TruthOS Daily Reflection Pipeline Phase 2 writeback 的 smoke payload。",
+    "discernment_layers": {
+      "facts": [
+        "使用者在近 24 小時內反覆提到界線與過度承擔。"
+      ],
+      "interpretations": [
+        "目前的主題重心落在關係責任與自我對齊。"
+      ],
+      "inferences": [
+        {
+          "statement": "可能存在把支持誤當成接管的傾向。",
+          "confidence": 0.72,
+          "working_hypothesis": true
+        }
+      ],
+      "guidance": [
+        "今天先區分哪些是你的責任，哪些不是。"
+      ]
+    },
+    "signals": {
+      "emotions": [
+        "焦慮",
+        "想維持和諧"
+      ],
+      "relationship_patterns": [
+        "過度解釋",
+        "先替別人收拾"
+      ],
+      "work_patterns": [
+        "先求不出錯"
+      ],
+      "decision_patterns": [
+        "延後說出真實需求"
+      ]
+    },
+    "truth_mapping": {
+      "dimensions": [
+        {
+          "code": "relationship",
+          "score": 0.91
+        },
+        {
+          "code": "belief",
+          "score": 0.74
+        }
+      ],
+      "principles": [
+        {
+          "code": "REL_001",
+          "title": "愛不等於接管",
+          "confidence": 0.83
+        },
+        {
+          "code": "DIS_004",
+          "title": "有道理未必是真理",
+          "confidence": 0.76
+        }
+      ],
+      "puzzles": [
+        {
+          "id": "PZ_REL_BOUNDARY_01",
+          "title": "Boundary Spiral",
+          "pattern_type": "relationship",
+          "confidence": 0.82
+        }
+      ]
+    },
+    "writeback_candidates": {
+      "soul_map": {
+        "recurring_patterns": [
+          "在關係中先接管再疲憊"
+        ],
+        "limiting_beliefs": [
+          "如果我不先扛，事情就會失控"
+        ],
+        "emotional_signatures": [
+          "界線前的焦慮"
+        ],
+        "active_lessons": [
+          "把支持和接管分開"
+        ],
+        "evolution_stage": "boundary_recalibration",
+        "should_write": true
+      },
+      "blind_spot_archive": [
+        {
+          "title": "Boundary Collapse",
+          "trigger_pattern": "對方情緒升高時先退讓",
+          "known_theory": "知道界線很重要",
+          "practical_failure_mode": "但一緊張就改成自我壓抑",
+          "suggested_anchors": [
+            "先暫停回應",
+            "先確認責任邊界"
+          ],
+          "related_puzzles": [
+            "PZ_REL_BOUNDARY_01"
+          ],
+          "should_write": true
+        }
+      ],
+      "belief_logs": [
+        {
+          "belief_before": "只有我先承擔，關係才不會壞掉",
+          "belief_after": "清楚界線反而更能保護關係",
+          "tag": "relationship-boundary",
+          "evidence": [
+            "本日覺察摘要",
+            "對話中的自我修正"
+          ],
+          "related_dimension_code": "relationship",
+          "related_principle_code": "REL_001",
+          "should_write": true
+        }
+      ],
+      "case_summary": {
+        "title": "Boundary Recalibration Day",
+        "summary": "本日重點在於從接管轉向有界線的支持。",
+        "related_dimensions": [
+          "relationship",
+          "belief"
+        ],
+        "should_write": true
+      }
+    },
+    "dashboard_metrics": {
+      "clarity_score": 78,
+      "emotional_intensity_score": 63,
+      "alignment_score": 74,
+      "boundary_score": 69,
+      "truth_discernment_score": 81,
+      "memory_confidence_score": 66
+    },
+    "uncertainty_notes": [
+      "目前未提供生命心法附件或可讀連結，因此本次僅能根據現有對話與記憶脈絡整理，不能補想、不能虛構、不能假設其內容。"
+    ],
+    "source_context_status": {
+      "life_principles_attached": false,
+      "external_context_complete": false,
+      "missing_inputs": [
+        "life_principles_attachment"
+      ]
+    },
+    "recommended_actions": [
+      "先寫下一句不需要過度解釋的界線句"
+    ],
+    "recommended_questions": [
+      "今天哪一個承擔其實不屬於你？"
+    ],
+    "truth_observations": [
+      "真正的支持需要邊界，而不是接管。"
+    ]
+  },
+  "dashboard_snapshot": {
+    "run_date": "2026-03-13",
+    "time_window_hours": 24,
+    "daily_timeline": {
+      "summary": "主題集中在關係界線與自我責任。",
+      "primary_dimensions": [
+        "relationship",
+        "belief"
+      ],
+      "primary_principles": [
+        "REL_001",
+        "DIS_004"
+      ],
+      "primary_fluctuations": [
+        "焦慮",
+        "放下接管"
+      ]
+    },
+    "dimension_scores": [
+      {
+        "dimension_code": "relationship",
+        "score": 0.91
+      },
+      {
+        "dimension_code": "belief",
+        "score": 0.74
+      }
+    ],
+    "recurring_patterns": [
+      {
+        "pattern_key": "relationship:over-responsibility",
+        "title": "過度承擔",
+        "count_increment": 1,
+        "last_seen": "2026-03-13",
+        "confidence": 0.8
+      }
+    ],
+    "belief_shifts": [
+      {
+        "belief_key": "relationship-boundary-shift",
+        "belief_before": "只有我先承擔，關係才不會壞掉",
+        "belief_after": "清楚界線反而更能保護關係",
+        "evidence_count": 2,
+        "related_dimension_code": "relationship",
+        "related_principle_code": "REL_001"
+      }
+    ],
+    "blind_spots": [
+      {
+        "blind_spot_key": "boundary-collapse",
+        "title": "Boundary Collapse",
+        "trigger_pattern": "對方情緒升高時先退讓",
+        "failure_mode": "明知界線重要仍先自我壓抑",
+        "status": "candidate"
+      }
+    ],
+    "alignment_metrics": {
+      "clarity_score": 78,
+      "boundary_score": 69,
+      "discernment_score": 81,
+      "alignment_score": 74,
+      "emotional_intensity_score": 63,
+      "memory_confidence_score": 66
+    },
+    "source_run_path": "/Users/tongwei/.openclaw/inspirit-truthos/data/daily_reflections/2026-03-13/reflection.json"
+  },
+  "writeback_candidates": {
+    "soul_map": {
+      "recurring_patterns": [
+        "在關係中先接管再疲憊"
+      ],
+      "limiting_beliefs": [
+        "如果我不先扛，事情就會失控"
+      ],
+      "emotional_signatures": [
+        "界線前的焦慮"
+      ],
+      "active_lessons": [
+        "把支持和接管分開"
+      ],
+      "evolution_stage": "boundary_recalibration",
+      "should_write": true
+    },
+    "blind_spot_archive": [
+      {
+        "title": "Boundary Collapse",
+        "trigger_pattern": "對方情緒升高時先退讓",
+        "known_theory": "知道界線很重要",
+        "practical_failure_mode": "但一緊張就改成自我壓抑",
+        "suggested_anchors": [
+          "先暫停回應",
+          "先確認責任邊界"
+        ],
+        "related_puzzles": [
+          "PZ_REL_BOUNDARY_01"
+        ],
+        "should_write": true
+      }
+    ],
+    "belief_logs": [
+      {
+        "belief_before": "只有我先承擔，關係才不會壞掉",
+        "belief_after": "清楚界線反而更能保護關係",
+        "tag": "relationship-boundary",
+        "evidence": [
+          "本日覺察摘要",
+          "對話中的自我修正"
+        ],
+        "related_dimension_code": "relationship",
+        "related_principle_code": "REL_001",
+        "should_write": true
+      }
+    ],
+    "case_summary": {
+      "title": "Boundary Recalibration Day",
+      "summary": "本日重點在於從接管轉向有界線的支持。",
+      "related_dimensions": [
+        "relationship",
+        "belief"
+      ],
+      "should_write": true
+    }
+  },
+  "import_drafts": {
+    "core_principle_candidates": [
+      {
+        "id": "draft_rel_boundary_support",
+        "dimension": "relationship",
+        "title": "支持不等於接管",
+        "axiom": "真正的支持保留對方的責任與你的界線。",
+        "explanation": "這條心法用來區分愛與代償式承擔。",
+        "shadow_form": "以愛之名代替對方承擔",
+        "truth_form": "在尊重自由意志下給出有界線的支持",
+        "coach_questions": [
+          "這裡哪個責任其實不屬於你？"
+        ],
+        "source_refs": [
+          "reflection_run:2026-03-13",
+          "operator_summary:smoke"
+        ],
+        "status": "draft",
+        "generated_from_run_date": "2026-03-13",
+        "cross_day_support_count": 3
+      }
+    ],
+    "truth_puzzle_candidates": [
+      {
+        "id": "draft_puzzle_boundary_spiral",
+        "dimension": "relationship",
+        "principle_code": "draft_rel_boundary_support",
+        "title": "Boundary Spiral",
+        "statement": "當你怕失去關係，就容易把支持變成接管。",
+        "pattern_type": "relationship",
+        "misbelief": "我不先扛，事情就會壞掉",
+        "truth_reframe": "界線不是拒絕，而是讓愛不扭曲",
+        "coach_prompt": "你現在可以把哪一個責任還回去？",
+        "trigger_signals": [
+          "焦慮",
+          "對方情緒升高"
+        ],
+        "use_cases": [
+          "親密關係",
+          "合作"
+        ],
+        "tags": [
+          "boundary",
+          "over-responsibility"
+        ],
+        "source_doc": "reflection_run:2026-03-13",
+        "source_excerpt": "可能存在把支持誤當成接管的傾向。",
+        "status": "draft",
+        "generated_from_run_date": "2026-03-13",
+        "cross_day_support_count": 3
+      }
+    ]
+  },
+  "source_context_status": {
+    "life_principles_attached": false,
+    "external_context_complete": false,
+    "missing_inputs": [
+      "life_principles_attachment"
+    ]
+  },
+  "operator_summary": {
+    "window_hours": 24,
+    "primary_dimensions": [
+      "relationship",
+      "belief"
+    ],
+    "files_written": [
+      "data/daily_reflections/2026-03-13/report.md",
+      "data/daily_reflections/2026-03-13/reflection.json"
+    ],
+    "writeback_streams": [
+      "soul_map",
+      "blind_spot",
+      "belief_log",
+      "case_summary"
+    ],
+    "notes": [
+      "Smoke payload for Phase 2 integration"
+    ],
+    "metadata": {
+      "trigger": "manual-smoke"
+    }
+  }
+}

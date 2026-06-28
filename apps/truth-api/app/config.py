@@ -19,6 +19,13 @@ def get_env(name: str, default: str | None = None) -> str | None:
     return os.getenv(name, default)
 
 
+def get_bool_env(name: str, default: bool) -> bool:
+    raw = get_env(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def resolve_path(value: str | Path, *, base: Path | None = None) -> Path:
     path = Path(value)
     if path.is_absolute():
@@ -36,3 +43,37 @@ def get_lancedb_path() -> Path:
 
 def get_embedding_model() -> str:
     return get_env("EMBEDDING_MODEL", "text-embedding-3-small") or "text-embedding-3-small"
+
+
+def get_embedding_provider() -> str:
+    raw = (get_env("EMBEDDING_PROVIDER", "auto") or "auto").strip().lower()
+    aliases = {
+        "auto": "auto",
+        "gateway": "gateway",
+        "openclaw": "gateway",
+        "openai": "openai",
+        "ollama": "ollama-local",
+        "ollama-local": "ollama-local",
+    }
+    return aliases.get(raw, "auto")
+
+
+def get_openai_fallback_base_url() -> str:
+    return get_env("OPENAI_FALLBACK_BASE_URL", "https://api.openai.com/v1") or "https://api.openai.com/v1"
+
+
+def get_openai_fallback_api_key() -> str:
+    return (get_env("OPENAI_FALLBACK_API_KEY", "") or "").strip()
+
+
+def get_chat_model() -> str:
+    return get_env("CHAT_MODEL", "gpt-4o-mini") or "gpt-4o-mini"
+
+
+def get_dimension_classifier_llm_fallback() -> bool:
+    raw = (get_env("DIMENSION_CLASSIFIER_LLM_FALLBACK", "true") or "true").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
+
+
+def get_blueprint_writeback_enabled() -> bool:
+    return get_bool_env("BLUEPRINT_WRITEBACK_ENABLED", True)

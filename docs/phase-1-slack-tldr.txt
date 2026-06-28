@@ -1,0 +1,6 @@
+Phase 1.5 / 2 RC 已完成，交付已進入可 merge / 可發布狀態。
+這次不是只修一個名字，而是把平台從 session token 推進到 case identity。
+同時也從 chat memory 推進到 case-care memory，開始有節制地累積個案陪伴記憶。
+preferred_name 全鏈路、minimal blueprint writeback、guarded soul_age 已就位。
+soul_age 仍是 advisory / guarded / experimental，不是 definitive truth。
+下一步是 merge cleanup、observability extension、reviewed extraction、與 store/sync 強化。

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>ai.inspirit.ops-monthly-summary</string>
+
+    <key>ProgramArguments</key>
+    <array>
+      <string>/bin/bash</string>
+      <string>-lc</string>
+      <string>
+        mkdir -p /Users/tongwei/.openclaw/reports/monthly /Users/tongwei/.openclaw/logs &amp;&amp;
+        cd /Users/tongwei/.openclaw/inspirit-truthos/apps/truth-api &amp;&amp;
+        export PYTHONPATH=/Users/tongwei/.openclaw/inspirit-truthos/apps/truth-api &amp;&amp;
+        ./.venv/bin/python ./scripts/ops-monthly-summary.py
+      </string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/tongwei/.openclaw/inspirit-truthos/apps/truth-api</string>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+      <key>Day</key>
+      <integer>1</integer>
+      <key>Hour</key>
+      <integer>9</integer>
+      <key>Minute</key>
+      <integer>0</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/tongwei/.openclaw/logs/ops-monthly-summary.stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/tongwei/.openclaw/logs/ops-monthly-summary.stderr.log</string>
+  </dict>
+</plist>

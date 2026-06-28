@@ -440,19 +440,19 @@ class SoulMapEngine:
             return default
         return value
 
-    def _fetchone(self, sql: str, params: tuple = ()): 
+    def _fetchone(self, sql: str, params: tuple = ()):
         getter = getattr(self.db, "fetchone", None)
         if callable(getter):
             return getter(sql, params)
         return self.db.execute(sql, params).fetchone()
 
-    def _fetchall(self, sql: str, params: tuple = ()): 
+    def _fetchall(self, sql: str, params: tuple = ()):
         getter = getattr(self.db, "fetchall", None)
         if callable(getter):
             return getter(sql, params)
         return self.db.execute(sql, params).fetchall()
 
-    def _execute(self, sql: str, params: tuple = ()): 
+    def _execute(self, sql: str, params: tuple = ()):
         executor = getattr(self.db, "execute", None)
         if callable(executor):
             return executor(sql, params)

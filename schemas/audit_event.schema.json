@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Audit Event",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "action": {
+      "type": "string",
+      "enum": ["PROMOTION", "WRITEBACK", "REJECTION", "RETROSPECTION"]
+    },
+    "actor_id": {
+      "type": "string",
+      "description": "Agent or Operator ID"
+    },
+    "target_record_id": {
+      "type": "string"
+    },
+    "successful": {
+      "type": "boolean"
+    }
+  },
+  "required": ["event_id", "timestamp", "action", "actor_id", "target_record_id"]
+}
