@@ -1,0 +1,340 @@
+name: TruthOS CI
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  PYTHONPATH: ${{ github.workspace }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r apps/truth-api/requirements.txt
+          pip install pytest pytest-asyncio httpx
+
+      - name: Seed test database and run migrations
+        run: |
+          TRUTHOS_DB_PATH=/tmp/test_truthos.db python scripts/seed_import.py
+        env:
+          TRUTHOS_DB_PATH: /tmp/test_truthos.db
+
+      - name: Run explicit migrations on test DB
+        run: |
+          SQLITE_DB_PATH=/tmp/test_truthos.db python scripts/run_migration_004.py
+          SQLITE_DB_PATH=/tmp/test_truthos.db python scripts/run_migration_005.py
+          SQLITE_DB_PATH=/tmp/test_truthos.db python scripts/run_migration_006.py
+        env:
+          SQLITE_DB_PATH: /tmp/test_truthos.db
+
+      - name: Run pytest
+        run: |
+          pytest tests/ -v --tb=short
+        env:
+          TRUTHOS_DB_PATH: /tmp/test_truthos.db
+          TESTING: "true"
+
+      - name: Run Hermes Bridge tests
+        run: |
+          pytest tests/test_hermes_bridge.py -v
+        env:
+          TRUTHOS_DB_PATH: /tmp/test_truthos.db
+          TESTING: "true"
+
+      - name: Validate truth property tagging
+        run: |
+          python scripts/tag_truth_properties.py --db /tmp/test_truthos.db --report
+        env:
+          TRUTHOS_DB_PATH: /tmp/test_truthos.db
+
+  full-stack:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and start stack
+        run: |
+          cp .env.example .env
+          docker compose up -d --build
+
+      - name: Wait for API
+        run: |
+          for i in $(seq 1 40); do
+            if curl -fsS http://localhost:18000/healthz >/tmp/health.json; then
+              cat /tmp/health.json
+              exit 0
+            fi
+            docker compose logs truth-api --tail=50
+            sleep 3
+          done
+          docker compose ps
+          docker compose logs truth-api --tail=120
+          exit 1
+
+      - name: Wait for Hermes Agent
+        run: |
+          for i in $(seq 1 40); do
+            if curl -fsS http://localhost:8001/health >/tmp/hermes-health.json; then
+              cat /tmp/hermes-health.json
+              exit 0
+            fi
+            docker compose logs hermes-agent --tail=50
+            sleep 3
+          done
+          docker compose ps
+          docker compose logs hermes-agent --tail=120
+          exit 1
+
+      - name: Validate live truth query response
+        run: |
+          RESPONSE=$(curl -fsS -X POST http://localhost:18000/api/truth/query \
+            -H "Content-Type: application/json" \
+            -d '{
+              "userid": "test-sprint006",
+              "sessionid": "sess-sprint006-001",
+              "message": "我知道自己一直在逃避，但還是做不到直接面對關係裡的衝突",
+              "mode": "mentor",
+              "depth": "deep",
+              "language": "zh-TW"
+            }')
+          echo "$RESPONSE" | python3 -m json.tool
+          RESPONSE="$RESPONSE" python3 - <<'PY'
+          import json, os, sys
+          r = json.loads(os.environ["RESPONSE"])
+          tm = r.get("truth_map", {})
+          writeback = r.get("writeback", {})
+          checks = {
+              "truth_map present": bool(tm),
+              "fact_layer present": bool(tm.get("fact_layer")),
+              "reality_layer present": bool(tm.get("reality_layer")),
+              "truth_claim.axiom present": bool(tm.get("truth_claim", {}).get("axiom")),
+              "truth_claim.objectivity_statement present": bool(tm.get("truth_claim", {}).get("objectivity_statement")),
+              "wisdom_anchor present": bool(tm.get("wisdom_anchor")),
+              "verification_track valid": r.get("verification_track") in {"stillness", "dialogue", "evidence"},
+              "legacy dimensions present": "dimensions" in r,
+              "legacy principles present": "principles" in r,
+              "legacy puzzles present": "puzzles" in r,
+              "legacy response present": "response" in r,
+              "soul_map_changes present": "soul_map_changes" in writeback,
+              "user_context present": "user_context" in writeback,
+          }
+          for name, ok in checks.items():
+              print(f"{'PASS' if ok else 'FAIL'} - {name}")
+          if not all(checks.values()):
+              sys.exit(1)
+          PY
+
+      - name: Validate soul map endpoint
+        run: |
+          MAP=$(curl -fsS http://localhost:18000/api/soul-map/test-sprint006)
+          echo "$MAP" | python3 -m json.tool
+          MAP="$MAP" python3 - <<'PY'
+          import json, os
+          m = json.loads(os.environ["MAP"])
+          assert m["status"] == "active"
+          assert isinstance(m.get("recurring_patterns"), list)
+          assert isinstance(m.get("active_lessons"), list)
+          PY
+
+      - name: Verify Truth Console live
+        run: |
+          curl -sf http://localhost:18000/console | grep -q "TruthOS Console" && echo "Console: PASS" || (echo "Console: FAIL" && exit 1)
+          curl -sf "http://localhost:18000/api/soul-map/test-sprint006" | python3 -c "
+          import json, sys
+          r = json.load(sys.stdin)
+          assert 'evolution_stage' in r, 'evolution_stage missing'
+          print('Soul Map API: PASS')
+          "
+
+      - name: Verify TruthOS reachable from bridge
+        run: |
+          python3 - <<'PY'
+          import json
+          import urllib.request
+          with urllib.request.urlopen('http://localhost:18000/healthz', timeout=5) as response:
+              assert response.status == 200
+              payload = json.loads(response.read().decode())
+              assert payload.get('status') == 'ok'
+          print('TruthOS bridge reachability: PASS')
+          PY
+
+      - name: Validate Hermes chat integration
+        run: |
+          CHAT=$(curl -fsS -X POST http://localhost:8001/chat \
+            -H "Content-Type: application/json" \
+            -d '{
+              "user_id": "ci-hermes",
+              "session_id": "sess-hermes-010",
+              "message": "I know the truth, but I still avoid the conversation."
+            }')
+          echo "$CHAT" | python3 -m json.tool
+          CHAT="$CHAT" python3 - <<'PY'
+          import json, os
+          r = json.loads(os.environ["CHAT"])
+          assert r["session_id"] == "sess-hermes-010"
+          assert "response" in r
+          assert "truth_layer" in r
+          print("Hermes chat: PASS")
+          PY
+
+      - name: First conversation smoke test
+        run: |
+          FIRST=$(curl -fsS -X POST http://localhost:8001/chat \
+            -H "Content-Type: application/json" \
+            -d '{"user_id":"ci-first-light","session_id":"ci-s011","message":"I always give up before finishing what I start"}')
+          echo "$FIRST" | python3 -m json.tool
+          FIRST="$FIRST" python3 - <<'PY'
+          import json, os
+          data = json.loads(os.environ["FIRST"])
+          assert "response" in data, "response missing"
+          print("First conversation: PASS")
+          print("Soul Map Updated:", data.get("soul_map_updated", False))
+          print("Is Hard Case:", data.get("is_hard_case", False))
+          PY
+
+          sleep 2
+
+          MAP=$(curl -fsS http://localhost:18000/api/soul-map/ci-first-light)
+          echo "$MAP" | python3 -m json.tool
+          MAP="$MAP" python3 - <<'PY'
+          import json, os
+          data = json.loads(os.environ["MAP"])
+          assert "evolution_stage" in data, "evolution_stage missing"
+          assert data["evolution_stage"] == "awakening", data["evolution_stage"]
+          assert data.get("updated_at"), "updated_at missing"
+          print("Soul Map auto-created: PASS")
+          print("Stage:", data["evolution_stage"])
+          print("Patterns:", len(data.get("recurring_patterns", [])))
+          PY
+
+      - name: Verify Live Monitor APIs
+        run: |
+          STATS=$(curl -fsS http://localhost:18000/api/sessions/stats/summary)
+          echo "$STATS" | python3 -m json.tool
+          STATS="$STATS" python3 - <<'PY'
+          import json, os
+          r = json.loads(os.environ["STATS"])
+          assert "sessions_last_1h" in r
+          assert "queries_last_1h" in r
+          assert "avg_truth_score_1h" in r
+          assert "hard_cases_pending" in r
+          print("Live Monitor stats: PASS")
+          PY
+          curl -sf "http://localhost:18000/api/sessions/recent?minutes=10&limit=50" | python3 -c "
+          import json, sys
+          r = json.load(sys.stdin)
+          assert 'sessions' in r
+          print('Recent sessions: PASS')
+          "
+          curl -sf "http://localhost:18000/api/sessions/sess-hermes-010/truth-scores" | python3 -c "
+          import json, sys
+          r = json.load(sys.stdin)
+          assert r['session_id'] == 'sess-hermes-010'
+          assert 'evaluations' in r
+          print('Session truth scores: PASS')
+          "
+
+      - name: Validate DesignerAgent endpoint
+        run: |
+          docker compose exec -T truth-api python - <<'PY'
+          import json
+          import sqlite3
+          from datetime import datetime, timezone
+          db_path = "/app/data/truthos.db"
+          with sqlite3.connect(db_path) as conn:
+              conn.execute(
+                  """
+                  INSERT OR REPLACE INTO hardcasebuffer
+                    (userid, reasons, sessionid, createdat, status)
+                  VALUES (?, ?, ?, ?, 'pending')
+                  """,
+                  (
+                      "test-designer-007",
+                      json.dumps(["Pattern(s) ['relationship:control'] recurring 5+ times with high weight"]),
+                      "sess-designer-007",
+                      datetime.now(timezone.utc).isoformat(),
+                  ),
+              )
+              conn.commit()
+          PY
+          DESIGNER=$(curl -fsS -X POST http://localhost:18000/api/designer/hard-cases/test-designer-007/review)
+          echo "$DESIGNER" | python3 -m json.tool
+          DESIGNER="$DESIGNER" python3 - <<'PY'
+          import json, os
+          r = json.loads(os.environ["DESIGNER"])
+          assert r["hardcase_id"] == "test-designer-007"
+          assert r["evaluation"]["status"] in {"completed", "inconclusive"}
+          assert r["prompt_a"]["id"] != r["prompt_b"]["id"]
+          assert r["designer_review"]["reviewedby"] == "designer_agent"
+          assert r["knowledge_evolution"]["sourcetype"] == "hardcasebuffer"
+          if r["evaluation"]["status"] == "completed":
+              assert r["evaluation"]["winner_id"]
+              assert r["knowledge_evolution"]["changetype"] == "prompt_variant_won"
+          PY
+
+      - name: Validate truthevals writeback
+        run: |
+          docker compose exec -T truth-api python - <<'PY'
+          import sqlite3
+          db_path = "/app/data/truthos.db"
+          with sqlite3.connect(db_path) as conn:
+              row = conn.execute(
+                  """
+                  SELECT verification_track, life_evidence_confirmed, discovery_triggered
+                    FROM truthevals
+                   ORDER BY createdat DESC
+                   LIMIT 1
+                  """
+              ).fetchone()
+          print(row)
+          assert row is not None
+          assert row[0] in {"stillness", "dialogue", "evidence"}
+          PY
+
+      - name: Show compose status
+        if: always()
+        run: |
+          docker compose ps
+          docker compose logs truth-api --tail=100
+          docker compose logs hermes-agent --tail=100
+
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v
+
+  py-compile:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Syntax check all Python files
+        run: |
+          find . -name "*.py" -not -path "./.venv/*" | xargs python3 -m py_compile
+          echo "All Python files syntax OK"

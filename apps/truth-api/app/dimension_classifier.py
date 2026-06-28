@@ -1,12 +1,6 @@
 from __future__ import annotations
 
-import os
-import re
 from collections import defaultdict
-
-from openai import OpenAI
-
-from app.config import get_chat_model, get_dimension_classifier_llm_fallback
 
 DIMENSIONS = [
     "motive",
@@ -40,20 +34,54 @@ DIMENSION_KEYWORDS = {
 
 RELATIONAL_CONTEXT = ["伴侶", "家人", "家庭", "朋友", "同事", "關係", "婚姻", "親子"]
 CARE_CONTEXT = ["幫", "幫助", "照顧", "救", "支持", "接住"]
-CLASSIFIER_SYSTEM_PROMPT = (
-    "你是 in spirit 意識分析引擎。\n"
-    "從以下 12 個維度中，選出最符合用戶描述的前 3 個，只回傳逗號分隔的代碼：\n"
-    "motive, cognition, emotion, relationship, belief, evolution,\n"
-    "causality, manifestation, suffering, freedom, compassion, discernment"
-)
 
 
-def _keyword_scores(message: str) -> dict[str, float]:
+class ClassificationResult(list[str]):
+    def __init__(
+        self,
+        values: list[str],
+        *,
+        confidence: float,
+        low_confidence: bool,
+        low_confidence_reason: str | None,
+    ) -> None:
+        super().__init__(values)
+        self.confidence = confidence
+        self.low_confidence = low_confidence
+        self.low_confidence_reason = low_confidence_reason
+
+
+def _build_classification_result(
+    values: list[str],
+    *,
+    raw_input: str,
+    top_score: float,
+) -> ClassificationResult:
+    stripped_input = raw_input.strip()
+    low_confidence = top_score < 0.35 or len(stripped_input) < 8
+    low_confidence_reason = None
+    if len(stripped_input) < 8:
+        low_confidence_reason = "input_too_short"
+    elif top_score < 0.35:
+        low_confidence_reason = "top_score_below_threshold"
+    return ClassificationResult(
+        values,
+        confidence=top_score,
+        low_confidence=low_confidence,
+        low_confidence_reason=low_confidence_reason,
+    )
+
+
+def classify_dimensions(message: str, top_k: int = 3) -> list[str]:
     text = message.strip().lower()
-    scores: dict[str, float] = defaultdict(float)
     if not text:
-        return {dimension: 0.0 for dimension in DIMENSIONS}
+        return _build_classification_result(
+            DIMENSIONS[:top_k],
+            raw_input=message,
+            top_score=0.0,
+        )
 
+    scores: dict[str, float] = defaultdict(float)
     for dimension in DIMENSIONS:
         for keyword in DIMENSION_KEYWORDS[dimension]:
             token = keyword.lower()
@@ -68,65 +96,16 @@ def _keyword_scores(message: str) -> dict[str, float]:
         scores["relationship"] += 1.5
 
     if not scores:
-        return {dimension: 0.0 for dimension in DIMENSIONS}
-    return {dimension: float(scores.get(dimension, 0.0)) for dimension in DIMENSIONS}
+        for dimension in DIMENSIONS:
+            scores[dimension] = 0.0
 
-
-def _rank_dimensions(scores: dict[str, float], top_k: int) -> list[str]:
     ranked = sorted(
         DIMENSIONS,
         key=lambda dimension: (-scores[dimension], DIMENSIONS.index(dimension)),
     )
-    return ranked[:top_k]
-
-
-def _llm_fallback_needed(scores: dict[str, float]) -> bool:
-    top_score = max(scores.values(), default=0.0)
-    return top_score < 1.0
-
-
-def _parse_dimension_codes(raw: str, top_k: int) -> list[str]:
-    tokens = [token.strip().lower() for token in re.split(r"[,，\n]+", raw) if token.strip()]
-    picked: list[str] = []
-    for token in tokens:
-        if token in DIMENSIONS and token not in picked:
-            picked.append(token)
-        if len(picked) >= top_k:
-            break
-    return picked
-
-
-def _llm_dimension_fallback(message: str, top_k: int) -> list[str]:
-    client = OpenAI(
-        base_url=os.getenv("OPENAI_BASE_URL"),
-        api_key=os.getenv("OPENAI_API_KEY"),
+    top_score = max(scores.values()) if scores else 0.0
+    return _build_classification_result(
+        ranked[:top_k],
+        raw_input=message,
+        top_score=top_score,
     )
-    response = client.chat.completions.create(
-        model=get_chat_model(),
-        temperature=0,
-        messages=[
-            {"role": "system", "content": CLASSIFIER_SYSTEM_PROMPT},
-            {"role": "user", "content": f"用戶描述：{message.strip()}"},
-        ],
-    )
-    content = response.choices[0].message.content or ""
-    return _parse_dimension_codes(content, top_k)
-
-
-def classify_dimensions(message: str, top_k: int = 3) -> list[str]:
-    text = message.strip()
-    if not text:
-        return DIMENSIONS[:top_k]
-
-    scores = _keyword_scores(text)
-    ranked = _rank_dimensions(scores, top_k)
-
-    if get_dimension_classifier_llm_fallback() and _llm_fallback_needed(scores):
-        try:
-            llm_ranked = _llm_dimension_fallback(text, top_k)
-            if llm_ranked:
-                return llm_ranked
-        except Exception:
-            pass
-
-    return ranked

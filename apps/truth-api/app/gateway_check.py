@@ -8,7 +8,6 @@ from urllib.parse import urlunparse
 import httpx
 
 from app.config import get_embedding_model
-from app.config import get_openai_api_key
 from app.config import get_embedding_provider
 
 OPENAI_FALLBACK_PROVIDER = "openai"
@@ -68,7 +67,7 @@ def _embeddings_url(base_url: str) -> str:
 
 def _request_headers() -> dict[str, str]:
     headers: dict[str, str] = {}
-    api_key = get_openai_api_key()
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
     return headers
