@@ -159,3 +159,17 @@ Be minimal.
 Be typed.
 Be boundary-aware.
 Verify reality.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs are tracked in GitHub Issues for `lightworker4love/inspirit-truthos`. See `.agents/docs/issue-tracker.md`.
+
+### Triage labels
+
+Triage uses the five canonical workflow labels while preserving the repo's existing classification labels. See `.agents/docs/triage-labels.md`.
+
+### Domain docs
+
+Domain documentation uses a multi-context layout covering Truth core, TruthOS web, and Hermes integration. See `.agents/docs/domain.md`.
