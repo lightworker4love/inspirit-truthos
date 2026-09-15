@@ -1,25 +1,41 @@
 name: Deploy to Railway
 
 on:
-  push:
+  workflow_run:
+    workflows:
+      - TruthOS CI
+    types:
+      - completed
     branches:
       - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: railway-production
+  cancel-in-progress: true
 
 jobs:
-  test:
-    uses: ./.github/workflows/ci.yml
-
   deploy:
-    needs: test
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       RAILWAY_PROJECT_ID: 2a0c0d84-ad7b-493a-84dd-eebcda0248cf
       RAILWAY_ENVIRONMENT: production
+      DEPLOY_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_SHA }}
 
       - name: Install Railway CLI
-        run: npm install -g @railway/cli
+        run: npm install -g @railway/cli@5.57.2
 
       - name: Verify Railway token
         env:
@@ -39,7 +55,7 @@ jobs:
             --environment "$RAILWAY_ENVIRONMENT" \
             --service truth-api \
             --detach \
-            --message "GitHub Actions deploy truth-api ${GITHUB_SHA}"
+            --message "GitHub Actions deploy truth-api ${DEPLOY_SHA}"
 
       - name: Deploy hermes-agent
         env:
@@ -50,7 +66,7 @@ jobs:
             --environment "$RAILWAY_ENVIRONMENT" \
             --service hermes-agent \
             --detach \
-            --message "GitHub Actions deploy hermes-agent ${GITHUB_SHA}"
+            --message "GitHub Actions deploy hermes-agent ${DEPLOY_SHA}"
 
       - name: Deploy truthos-web
         env:
@@ -61,4 +77,4 @@ jobs:
             --environment "$RAILWAY_ENVIRONMENT" \
             --service truthos-web \
             --detach \
-            --message "GitHub Actions deploy truthos-web ${GITHUB_SHA}"
+            --message "GitHub Actions deploy truthos-web ${DEPLOY_SHA}"

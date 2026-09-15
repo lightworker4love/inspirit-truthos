@@ -73,8 +73,13 @@ npm run dev
 
 ## Deployment
 
-- Deployment target: Railway
-- CI/CD: GitHub Actions with deployment workflow
+- Preview deployment target: Railway Free
+- CI/CD: GitHub Actions deploys runtime changes after `TruthOS CI` succeeds;
+  maintainers can also start a reviewed deployment manually
+- All three services enable Railway Serverless sleeping to conserve the Free
+  plan's monthly resource credit; the first request after sleep may cold-start
+- The Free deployment is an evaluation preview, not a production-availability
+  commitment
 - See `DEPLOY.md` for deployment details
 
 ## Contributing and security
