@@ -6,6 +6,7 @@ import os
 import sqlite3
 from datetime import datetime, timezone
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
@@ -45,7 +46,15 @@ except ImportError:  # pragma: no cover - compatibility shim for local/dev envs
 
     structlog = _StructlogCompat()
 
+TRUTHOS_WEB_ORIGIN = "https://truthos-web-production.up.railway.app"
+
 app = FastAPI(title="TruthOS API", version="0.1.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[TRUTHOS_WEB_ORIGIN],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
 logger = structlog.get_logger("truth.api")
 STATIC_DIR = Path(__file__).resolve().parents[1] / "static"
 os.makedirs(STATIC_DIR, exist_ok=True)
