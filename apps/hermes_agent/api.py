@@ -4,12 +4,21 @@ from typing import Optional
 from uuid import uuid4
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from .agent import handle_message, start_session
 
 
+TRUTHOS_WEB_ORIGIN = "https://truthos-web-production.up.railway.app"
+
 app = FastAPI(title="Hermes Agent API")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[TRUTHOS_WEB_ORIGIN],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
 
 
 class ChatRequest(BaseModel):
