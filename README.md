@@ -1,7 +1,17 @@
 # TruthOS
 
-Knowledge graph & semantic memory layer for the in spirit AI platform.
-Integrates with OpenClaw, Claude Code, and local LLMs via RAG + vector search.
+[![TruthOS CI](https://github.com/lightworker4love/inspirit-truthos/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/lightworker4love/inspirit-truthos/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+**An open-source knowledge graph and semantic memory layer for AI applications.**
+
+TruthOS is the persistence and retrieval layer for the in spirit AI platform.
+It integrates with OpenClaw, Claude Code, and local LLMs through RAG and vector
+search.
+
+> **Project status:** TruthOS is under active development. The current releases
+> are suitable for evaluation and contributor testing; APIs and storage schemas
+> may change before v1.0.
 
 ## What
 
@@ -66,6 +76,17 @@ npm run dev
 - Deployment target: Railway
 - CI/CD: GitHub Actions with deployment workflow
 - See `DEPLOY.md` for deployment details
+
+## Contributing and security
+
+- Read [`CONTRIBUTING.md`](CONTRIBUTING.md) for local setup, tests, and the pull
+  request workflow.
+- Report vulnerabilities privately according to [`SECURITY.md`](SECURITY.md).
+- Follow current maintenance work in the repository's
+  [issues](https://github.com/lightworker4love/inspirit-truthos/issues) and
+  [`v0.1.0 — Foundation and Reliability`](https://github.com/lightworker4love/inspirit-truthos/milestone/1)
+  milestone.
+- TruthOS is available under the [MIT License](LICENSE).
 
 ## Seed import
 
