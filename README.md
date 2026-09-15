@@ -9,9 +9,9 @@ TruthOS is the persistence and retrieval layer for the in spirit AI platform.
 It integrates with OpenClaw, Claude Code, and local LLMs through RAG and vector
 search.
 
-> **Project status:** TruthOS is under active development. The current releases
-> are suitable for evaluation and contributor testing; APIs and storage schemas
-> may change before v1.0.
+> **Project status:** TruthOS is under active development. The v0.x line is
+> suitable for evaluation and contributor testing; APIs and storage schemas may
+> change before v1.0.
 
 ## What
 

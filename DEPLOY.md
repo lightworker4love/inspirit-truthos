@@ -59,13 +59,24 @@ git push origin master
 The workflow runs the existing CI suite first. Railway deploy starts only after
 the tests and container checks pass.
 
-Production smoke check:
+Production smoke checks require the current Railway-generated service domains.
+Copy them from the Railway dashboard rather than relying on historical hostnames:
 
 ```bash
-curl -s -w "\nHTTP %{http_code}" https://truth-api-production-0046.up.railway.app/health
-curl -s -w "\nHTTP %{http_code}" https://hermes-agent-production-848a.up.railway.app/health
-curl -s -w "\nHTTP %{http_code}" https://truthos-web-production.up.railway.app
-curl -s -w "\nHTTP %{http_code}" -X POST https://hermes-agent-production-848a.up.railway.app/chat \
+export TRUTH_API_URL="https://<current-truth-api-domain>"
+export HERMES_AGENT_URL="https://<current-hermes-agent-domain>"
+export TRUTHOS_WEB_URL="https://<current-truthos-web-domain>"
+
+curl -fsS -w "\nHTTP %{http_code}\n" "$TRUTH_API_URL/healthz"
+curl -fsS -w "\nHTTP %{http_code}\n" "$HERMES_AGENT_URL/health"
+curl -fsS -o /dev/null -w "HTTP %{http_code}\n" "$TRUTHOS_WEB_URL"
+```
+
+The following optional integration check writes synthetic smoke-test data. Run
+it only in an environment where that write is intended:
+
+```bash
+curl -fsS -w "\nHTTP %{http_code}\n" -X POST "$HERMES_AGENT_URL/chat" \
   -H "Content-Type: application/json" \
   -d '{"user_id": "smoke-user-001", "message": "smoke test ping"}'
 ```
@@ -76,13 +87,17 @@ The Railway service manifests set `sleepApplication: false` for production.
 Keep the lightweight ping script available as an external fallback if a service
 still shows cold-start latency after idle periods.
 
-Manual run:
+The current `scripts/keepalive.sh` contains historical service hostnames and must
+not be scheduled until it is changed to accept the current verified domains.
+Treat it as a legacy helper, not evidence that production is available.
+
+Manual run after it has been reconfigured:
 
 ```bash
 ./scripts/keepalive.sh
 ```
 
-Optional cron schedule:
+Optional cron schedule after it has been reconfigured:
 
 ```bash
 crontab -e
@@ -91,20 +106,22 @@ crontab -e
 Add:
 
 ```cron
-*/10 * * * * /Users/imlightworker/Documents/Codex/inspirit-truthos/scripts/keepalive.sh >> ~/truthos-keepalive.log 2>&1
+*/10 * * * * /absolute/path/to/inspirit-truthos/scripts/keepalive.sh >> /absolute/path/to/truthos-keepalive.log 2>&1
 ```
 
 ## Production Readiness Checklist
 
-✅ Three Railway services live and healthy
-✅ sleepApplication: false on all services
-✅ GitHub Actions CI/CD pipeline verified
-✅ Frontend timeout and warm-up UX configured
-✅ keepalive script available at scripts/keepalive.sh
-✅ npm audit findings resolved
-⬜ Custom domain configured (future)
-⬜ Railway paid plan for guaranteed uptime (future)
-⬜ Session history persistence (future sprint)
+- [x] Docker Compose stack is built and exercised by GitHub CI
+- [x] Railway service manifests parse and define health checks
+- [x] `sleepApplication: false` is configured for all three Railway services
+- [ ] Current Railway service domains are recorded and return successful health checks
+- [ ] The legacy keepalive helper accepts current domains instead of fixed historical URLs
+- [ ] Current dependency alerts are triaged before a production-readiness claim
+- [ ] A production deployment is followed by read-only health checks and an explicitly authorized write-path smoke test
+
+This checklist describes requirements, not current production availability. The
+historical public hostnames previously listed here returned HTTP 404 on
+2026-09-16, so production availability is currently **not verified**.
 
 ## Auto-Deploy Verification Log
 
@@ -170,13 +187,9 @@ Current Railway services:
 | `hermes-agent` | `TRUTHOS_BASE_URL` |
 | `truthos-web` | `NEXT_PUBLIC_HERMES_AGENT_URL`, `NEXT_PUBLIC_TRUTH_API_URL` |
 
-Current Railway URLs:
-
-| Service | URL |
-| --- | --- |
-| `truth-api` | `https://truth-api-production-0046.up.railway.app` |
-| `hermes-agent` | `https://hermes-agent-production-848a.up.railway.app` |
-| `truthos-web` | `https://truthos-web-production.up.railway.app` |
+Railway service domains are deployment-specific. Retrieve the current domains
+from the Railway dashboard or CLI, then run the smoke checks above. Do not commit
+tokens or private environment values while recording operational evidence.
 
 GitHub Actions requires:
 
@@ -191,7 +204,7 @@ GitHub Actions requires:
 - 2026-05-18: `hermes-agent` `POST /chat` requires `user_id` as a required field. Smoke test payload must include `{"user_id": "...", "message": "..."}`. Minimal valid smoke test command:
 
 ```bash
-curl -s -X POST https://hermes-agent-production-848a.up.railway.app/chat \
+curl -s -X POST "$HERMES_AGENT_URL/chat" \
   -H "Content-Type: application/json" \
   -d '{"user_id": "smoke-user-001", "message": "smoke test ping"}'
 ```
@@ -199,3 +212,7 @@ curl -s -X POST https://hermes-agent-production-848a.up.railway.app/chat \
 - 2026-05-19: Railway cold starts can make the first health or chat request
   feel degraded. The frontend now waits longer, shows a warm-up state, and
   production Railway manifests explicitly keep applications awake.
+
+- 2026-09-16: The three historical Railway hostnames documented in this file
+  returned HTTP 404. They were removed from the runbook. Re-establish current
+  domains and rerun the smoke checks before claiming production availability.
