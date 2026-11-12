@@ -48,13 +48,13 @@ export default function WelcomePage() {
     <section className="mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-xl flex-col justify-center px-6 py-12">
       <div className="mb-10 space-y-5">
         <p className="text-sm tracking-[0.18em] text-muted-foreground uppercase">
-          iN SPiRiT Life Blueprint
+          iN SPiRiT 生命藍圖 Life Blueprint
         </p>
         <h1 className="font-serif text-5xl leading-tight text-balance md:text-6xl">
           你好，我是 Hermes
         </h1>
         <p className="max-w-lg text-lg leading-8 text-muted-foreground">
-          這裡是一個私密的反思空間，讓我們一起看見你生命藍圖的輪廓。
+          我是你的「生命藍圖陪伴者」。這裡是一個專屬於學員的私密反思空間，讓我們一起看見你生命藍圖的輪廓。
         </p>
       </div>
 

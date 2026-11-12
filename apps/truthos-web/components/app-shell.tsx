@@ -39,8 +39,8 @@ function TruthLogo() {
         />
       </svg>
       <div>
-        <p className="font-serif text-xl leading-none">TruthOS</p>
-        <p className="text-xs text-muted-foreground">Life Blueprint</p>
+        <p className="font-serif text-xl leading-none">iN SPiRiT</p>
+        <p className="text-xs text-muted-foreground">生命藍圖 Life Blueprint</p>
       </div>
     </div>
   );
