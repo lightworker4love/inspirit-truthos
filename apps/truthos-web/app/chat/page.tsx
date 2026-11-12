@@ -25,7 +25,7 @@ const suggestions = [
 ];
 
 const welcomeText =
-  "你好。我是 Hermes，你的生命藍圖引導者。\n這裡是一個私密的空間，你說的每一句話都只為了你自己。\n慢慢說，從現在最真實的一句話開始。";
+  "你好。我是 Hermes，你的生命藍圖陪伴者。\n這裡是一個專屬於學員的私密空間，你說的每一句話都只為了你自己。\n慢慢說，從現在最真實的一句話開始。";
 
 function formatTime(date: Date) {
   return new Intl.DateTimeFormat("zh-TW", {

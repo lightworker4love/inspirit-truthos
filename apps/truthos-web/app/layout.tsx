@@ -16,8 +16,8 @@ const lora = Lora({
 });
 
 export const metadata: Metadata = {
-  title: "TruthOS",
-  description: "iN SPiRiT Life Blueprint guided reflection space",
+  title: "iN SPiRiT 生命藍圖 Life Blueprint",
+  description: "iN SPiRiT 生命藍圖，由 Hermes 生命藍圖陪伴者引導的學員私密反思空間",
 };
 
 export default function RootLayout({
