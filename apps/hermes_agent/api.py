@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Optional
 from uuid import uuid4
 
@@ -10,7 +11,9 @@ from pydantic import BaseModel
 from .agent import handle_message, start_session
 
 
-TRUTHOS_WEB_ORIGIN = "https://truthos-web-production.up.railway.app"
+TRUTHOS_WEB_ORIGIN = os.getenv(
+    "TRUTHOS_WEB_ORIGIN", "https://truthos-web-production.up.railway.app"
+)
 
 app = FastAPI(title="Hermes Agent API")
 app.add_middleware(

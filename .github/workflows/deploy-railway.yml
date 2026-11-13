@@ -9,6 +9,12 @@ on:
     branches:
       - master
   workflow_dispatch:
+    inputs:
+      preflight_only:
+        description: Verify existing Railway access without starting any deployment
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -39,42 +45,38 @@ jobs:
 
       - name: Verify Railway token
         env:
-          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: |
-          if [ -z "$RAILWAY_API_TOKEN" ]; then
-            echo "::error::Missing RAILWAY_TOKEN GitHub Actions secret."
-            exit 1
-          fi
+          RAILWAY_DEPLOY_CREDENTIAL: ${{ secrets.RAILWAY_TOKEN }}
+        run: node .github/scripts/verify-railway-auth.mjs
 
       - name: Deploy truth-api
-        env:
-          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        if: ${{ !inputs.preflight_only }}
         run: |
           railway up \
             --project "$RAILWAY_PROJECT_ID" \
             --environment "$RAILWAY_ENVIRONMENT" \
             --service truth-api \
-            --detach \
+            --ci \
             --message "GitHub Actions deploy truth-api ${DEPLOY_SHA}"
+          node .github/scripts/wait-railway-deployment.mjs truth-api
 
       - name: Deploy hermes-agent
-        env:
-          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        if: ${{ !inputs.preflight_only }}
         run: |
           railway up \
             --project "$RAILWAY_PROJECT_ID" \
             --environment "$RAILWAY_ENVIRONMENT" \
             --service hermes-agent \
-            --detach \
+            --ci \
             --message "GitHub Actions deploy hermes-agent ${DEPLOY_SHA}"
+          node .github/scripts/wait-railway-deployment.mjs hermes-agent
 
       - name: Deploy truthos-web
-        env:
-          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        if: ${{ !inputs.preflight_only }}
         run: |
           railway up \
             --project "$RAILWAY_PROJECT_ID" \
             --environment "$RAILWAY_ENVIRONMENT" \
             --service truthos-web \
-            --detach \
+            --ci \
             --message "GitHub Actions deploy truthos-web ${DEPLOY_SHA}"
+          node .github/scripts/wait-railway-deployment.mjs truthos-web
