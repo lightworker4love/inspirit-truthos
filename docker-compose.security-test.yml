@@ -1,0 +1,93 @@
+# Separate test stack: no host mounts, credentials, production data or external runtime network.
+services:
+  truth-api:
+    build:
+      context: .
+      dockerfile: apps/truth-api/Dockerfile
+    environment:
+      TRUTHOS_ENV: test
+      TESTING: "true"
+      TRUTHOS_DB_PATH: /tmp/truthos-security/truthos.db
+      SQLITE_DB_PATH: /tmp/truthos-security/truthos.db
+      TRUTHOS_WEB_ORIGIN: http://127.0.0.1:13100
+      OPENAI_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      OPENAI_FALLBACK_API_KEY: ""
+    tmpfs:
+      - /tmp/truthos-security
+    networks: [security-test]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"]
+      interval: 3s
+      timeout: 6s
+      retries: 40
+  hermes-agent:
+    build:
+      context: .
+      dockerfile: apps/hermes-agent/Dockerfile
+    environment:
+      TRUTHOS_BASE_URL: http://truth-api:8000
+      TRUTHOS_WEB_ORIGIN: http://127.0.0.1:13100
+    networks: [security-test]
+    depends_on:
+      truth-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=5)"]
+      interval: 3s
+      timeout: 6s
+      retries: 40
+  web:
+    build:
+      context: .
+      dockerfile: apps/truthos-web/Dockerfile
+      args:
+        NEXT_PUBLIC_TRUTH_API_URL: http://127.0.0.1:18180
+        NEXT_PUBLIC_HERMES_AGENT_URL: http://127.0.0.1:18181
+        NEXT_PUBLIC_MIXPANEL_TOKEN: ""
+    environment:
+      HOSTNAME: 0.0.0.0
+    networks: [security-test]
+    depends_on:
+      hermes-agent:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 6s
+      retries: 40
+  gateway:
+    image: node:20-alpine
+    # Fixed upstreams only; the backend containers retain their internal-only network.
+    command:
+      - node
+      - -e
+      - |
+        const http = require('http');
+        for (const [port, host, target] of [[13100,'web',3000],[18180,'truth-api',8000],[18181,'hermes-agent',8001]]) {
+          http.createServer((req, res) => {
+            const upstream = http.request({ hostname: host, port: target, method: req.method, path: req.url, headers: req.headers }, response => {
+              res.writeHead(response.statusCode, response.headers);
+              response.pipe(res);
+            });
+            upstream.on('error', () => { res.writeHead(502); res.end('test upstream unavailable'); });
+            req.pipe(upstream);
+          }).listen(port, '0.0.0.0');
+        }
+    ports:
+      - "127.0.0.1:13100:13100"
+      - "127.0.0.1:18180:18180"
+      - "127.0.0.1:18181:18181"
+    networks: [security-test, ingress]
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:13100').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 6s
+      retries: 40
+networks:
+  security-test:
+    internal: true
+  ingress:

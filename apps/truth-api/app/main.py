@@ -46,7 +46,9 @@ except ImportError:  # pragma: no cover - compatibility shim for local/dev envs
 
     structlog = _StructlogCompat()
 
-TRUTHOS_WEB_ORIGIN = "https://truthos-web-production.up.railway.app"
+TRUTHOS_WEB_ORIGIN = os.getenv(
+    "TRUTHOS_WEB_ORIGIN", "https://truthos-web-production.up.railway.app"
+)
 
 app = FastAPI(title="TruthOS API", version="0.1.0")
 app.add_middleware(

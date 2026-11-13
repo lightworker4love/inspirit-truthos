@@ -23,6 +23,83 @@ env:
   PYTHONPATH: ${{ github.workspace }}
 
 jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/truthos-web
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_HERMES_AGENT_URL: http://127.0.0.1:9
+      NEXT_PUBLIC_TRUTH_API_URL: http://127.0.0.1:9
+      NEXT_PUBLIC_MIXPANEL_TOKEN: ""
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/truthos-web/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Audit all frontend dependencies
+        run: npm audit
+
+      - name: Verify install did not rewrite dependency files
+        run: git diff --exit-code -- package.json package-lock.json
+
+      - name: Lint frontend
+        run: npm run lint
+
+      - name: Check frontend types
+        run: npx --no-install tsc --noEmit
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build production standalone image
+        working-directory: ${{ github.workspace }}
+        run: docker build -f apps/truthos-web/Dockerfile -t truthos-web-ci .
+
+      - name: Smoke test standalone without external network
+        run: docker run --rm -i --network none --entrypoint node truthos-web-ci --input-type=module < scripts/verify-standalone.mjs
+
+      - name: Install Chromium
+        run: npx --no-install playwright install --with-deps chromium
+
+      - name: Start isolated test backend and frontend
+        working-directory: ${{ github.workspace }}
+        run: docker compose -p truthos-security-ci -f docker-compose.security-test.yml up -d --build --wait --wait-timeout 180
+
+      - name: Browser and real backend acceptance
+        run: npm run test:e2e
+
+      - name: Show test service logs on failure
+        if: failure()
+        working-directory: ${{ github.workspace }}
+        run: docker compose -p truthos-security-ci -f docker-compose.security-test.yml logs --tail=100
+
+      - name: Stop isolated test services
+        if: always()
+        working-directory: ${{ github.workspace }}
+        run: docker compose -p truthos-security-ci -f docker-compose.security-test.yml down --volumes
+
+      - name: Save browser acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-security-acceptance
+          path: |
+            apps/truthos-web/playwright-report/
+            apps/truthos-web/test-results/
+          retention-days: 7
+
   test:
     runs-on: ubuntu-latest
 
