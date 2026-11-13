@@ -119,6 +119,9 @@ jobs:
           pip install -r apps/truth-api/requirements.txt
           pip install pytest pytest-asyncio httpx
 
+      - name: Verify Unicode packaging exclusion security fix
+        run: python scripts/verify_setuptools_unicode.py
+
       - name: Seed test database and run migrations
         run: |
           TRUTHOS_DB_PATH=/tmp/test_truthos.db python scripts/seed_import.py

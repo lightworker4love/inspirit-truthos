@@ -1,5 +1,13 @@
 # TruthOS security acceptance — 2026-11-13
 
+## Authorized release follow-up
+
+The user subsequently authorized PR merge, production deployment and the remaining setuptools fix. setuptools is now pinned to 83.0.0 for truth-api and Hermes images. The Unicode MANIFEST.in exclusion regression passes on native Mac Python 3.11 and the Linux test container; all four browser/backend tests pass again.
+
+The previous production workflow failed with Unauthorized while treating the existing Railway secret as an account token. The release workflow now verifies whether the existing credential is project-scoped or account/workspace-scoped, checks access to the exact project, records safe pre-deployment IDs, and exports only the appropriate CLI variable. A preflight_only input skips every deployment step. No credential value is printed or changed. Actual release steps wait for successful deployments matching DEPLOY_SHA rather than treating detached upload acceptance as completion.
+
+Release gates: updated candidate CI must pass, Railway auth-only preflight must pass, then merge the reviewed candidate and observe master CI plus the automatic production workflow. Confirm service health and the deployed commit. The baseline IDs retained in workflow logs identify recovery targets; no unrelated environment, service, database or access-control change is included.
+
 ## Scope and baseline
 
 Repository: lightworker4love/inspirit-truthos.
